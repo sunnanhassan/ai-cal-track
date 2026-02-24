@@ -1,6 +1,10 @@
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
-import { TokenCache } from '@clerk/clerk-expo/dist/cache/types'
+export interface TokenCache {
+  getToken: (key: string) => Promise<string | undefined | null>
+  saveToken: (key: string, token: string) => Promise<void>
+  clearToken?: (key: string) => void
+}
 
 const createTokenCache = (): TokenCache => {
   return {
@@ -8,9 +12,13 @@ const createTokenCache = (): TokenCache => {
       try {
         const item = await SecureStore.getItemAsync(key)
         if (item) {
-          console.log(`${key} was read from SecureStore 🔐 \n`)
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`${key} was read from SecureStore 🔐 \n`)
+          }
         } else {
-          console.log('No values stored under key: ' + key)
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('No values stored under key: ' + key)
+          }
         }
         return item
       } catch (error) {

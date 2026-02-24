@@ -2,13 +2,13 @@ import { useOAuth, useSignUp } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -63,9 +63,15 @@ export default function SignUpScreen() {
       });
 
       if (completeSignUp.status === 'complete') {
+        if (!completeSignUp.createdUserId || !completeSignUp.createdSessionId) {
+          console.error('Missing required IDs on complete sign up:', completeSignUp);
+          setError('Sign up completed but user data is missing. Please try again.');
+          return;
+        }
+
         // Save to Firestore before routing
         await saveUserToFirestore({
-          id: completeSignUp.createdUserId || '',
+          id: completeSignUp.createdUserId,
           email: emailAddress,
           firstName,
           lastName,
@@ -92,12 +98,11 @@ export default function SignUpScreen() {
         
         await setActive({ session: createdSessionId });
 
-        // A better approach for OAuth is saving user from clerk webhook, 
-        // but we can try to save here relying on signIn/signUp object after OAuth flow.
-        const user = signUp?.createdUserId ? signUp : signIn;
-        if (user && user.createdUserId) {
+        // but we can try to save here relying on signUp object after OAuth flow.
+        const userId = signUp?.createdUserId;
+        if (userId) {
           await saveUserToFirestore({
-            id: user.createdUserId,
+            id: userId,
             // Assuming we might not have the email directly in this flow client-side,
             // but the ID is what matters to initiate the doc.
             email: undefined, 

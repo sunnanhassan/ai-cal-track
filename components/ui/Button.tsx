@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     ActivityIndicator,
+    StyleProp,
     StyleSheet,
     Text,
     TextStyle,
@@ -14,8 +15,8 @@ interface ButtonProps extends TouchableOpacityProps {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   isLoading?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   icon?: React.ReactNode;
 }
 

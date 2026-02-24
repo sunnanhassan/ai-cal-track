@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const saveUserToFirestore = async (user: {
@@ -6,7 +6,7 @@ export const saveUserToFirestore = async (user: {
   email: string | undefined;
   firstName?: string | null;
   lastName?: string | null;
-}) => {
+}): Promise<boolean> => {
   try {
     const userRef = doc(db, 'users', user.id);
     const userSnap = await getDoc(userRef);
@@ -17,13 +17,16 @@ export const saveUserToFirestore = async (user: {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
       });
       console.log('User saved to Firestore successfully');
+      return true;
     } else {
       console.log('User already exists in Firestore');
+      return true;
     }
   } catch (error) {
     console.error('Error saving user to Firestore:', error);
+    return false;
   }
 };

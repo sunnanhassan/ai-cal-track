@@ -14,6 +14,7 @@ interface SocialButtonProps {
   iconType: 'google' | 'apple';
   isLoading?: boolean;
   style?: ViewStyle;
+  accessibilityLabel?: string;
 }
 
 export const SocialButton = ({
@@ -22,6 +23,7 @@ export const SocialButton = ({
   iconType,
   isLoading,
   style,
+  accessibilityLabel,
 }: SocialButtonProps) => {
   return (
     <TouchableOpacity
@@ -29,6 +31,9 @@ export const SocialButton = ({
       onPress={onPress}
       disabled={isLoading}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityState={{ disabled: isLoading }}
     >
       {isLoading ? (
         <ActivityIndicator color="#F8FAFC" />

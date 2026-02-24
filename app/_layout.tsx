@@ -1,10 +1,10 @@
 import { ClerkLoaded, ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { saveUserToFirestore } from "../lib/auth-store";
 import { tokenCache } from "../lib/cache";
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 if (!publishableKey) {
   throw new Error("Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env");
@@ -26,16 +26,19 @@ function InitialLayout() {
     } else if (!isSignedIn && !inAuthGroup) {
       router.replace('/(auth)/sign-in');
     }
-  }, [isSignedIn, isLoaded, segments]);
+  }, [isSignedIn, isLoaded, segments, router]);
+
+  const savedUserThisSession = useRef(false);
 
   useEffect(() => {
-    if (isSignedIn && user) {
+    if (isSignedIn && user && !savedUserThisSession.current) {
       saveUserToFirestore({
         id: user.id,
         email: user.emailAddresses[0]?.emailAddress,
         firstName: user.firstName,
         lastName: user.lastName,
       });
+      savedUserThisSession.current = true;
     }
   }, [isSignedIn, user]);
 

@@ -102,10 +102,6 @@ export default function SignInScreen() {
             isPassword
           />
 
-          <Link href="/(auth)/sign-in" style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </Link>
-
           <Button
             title="Sign In"
             onPress={onSignInPress}
@@ -170,15 +166,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: '100%',
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    color: '#22c55e',
-    fontSize: 14,
-    fontWeight: '600',
   },
   dividerContainer: {
     flexDirection: 'row',
