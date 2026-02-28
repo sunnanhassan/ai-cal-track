@@ -2,7 +2,7 @@ import { ClerkLoaded, ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo"
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from "react";
-import { checkLocalOnboarding, saveUserToFirestore } from "../lib/auth-store";
+import { checkLocalOnboarding, onboardingEmitter, saveUserToFirestore } from "../lib/auth-store";
 import { tokenCache } from "../lib/cache";
 
 SplashScreen.preventAutoHideAsync();
@@ -46,6 +46,14 @@ function InitialLayout() {
     } else if (!isSignedIn) {
       setIsOnboardingComplete(null);
     }
+
+    // Listen for the instant onboarding completion event to prevent loops
+    const handleOnboardingComplete = () => setIsOnboardingComplete(true);
+    onboardingEmitter.addEventListener('onboardingCompleted', handleOnboardingComplete);
+
+    return () => {
+      onboardingEmitter.removeEventListener('onboardingCompleted', handleOnboardingComplete);
+    };
   }, [isSignedIn, user]);
 
   useEffect(() => {
@@ -63,7 +71,7 @@ function InitialLayout() {
     if (isSignedIn && isOnboardingComplete === false && !inOnboardingGroup) {
       router.replace('/(onboarding)/step-1' as any);
     } else if (isSignedIn && isOnboardingComplete === true && (inAuthGroup || (inOnboardingGroup && !isActuallyGenerating))) {
-      router.replace('/' as any);
+      router.replace('/(tabs)' as any);
     } else if (!isSignedIn && !inAuthGroup) {
       router.replace('/(auth)/sign-in' as any);
     }
@@ -75,6 +83,7 @@ function InitialLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>
   );

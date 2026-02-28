@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export interface UserOnboardingData {
   gender?: string;
   goal?: string;
@@ -20,11 +22,12 @@ export interface GeneratedFitnessPlan {
 
 export async function generateFitnessPlan(userData: UserOnboardingData): Promise<GeneratedFitnessPlan> {
   const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   if (!GEMINI_API_KEY) {
     throw new Error('Missing Expo Public Gemini API Key');
   }
+
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
   const prompt = `
     You are an expert fitness and nutrition AI coach. 
@@ -51,41 +54,22 @@ export async function generateFitnessPlan(userData: UserOnboardingData): Promise
   `;
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.2, // Low temperature for more deterministic output
-          responseMimeType: 'application/json',
-        }
-      }),
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      }
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Gemini API Error: ${response.status} - ${JSON.stringify(errorData)}`);
-    }
-
-    const data = await response.json();
-    
-    // Extract the JSON string from the Gemini response structure
-    const jsonString = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const jsonString = response.text;
     
     if (!jsonString) {
-      console.error('Gemini returned an empty structure:', data);
+      console.error('Gemini returned an empty structure:', response);
       throw new Error('Invalid response format from Gemini API');
     }
 
-    // Sometimes Gemini wraps the JSON in markdown code blocks even when told not to. 
-    // We clean it here before parsing to prevent crash loops.
     const cleanJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
 
     console.log("Cleaned Gemini Response:", cleanJsonString);
