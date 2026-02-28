@@ -40,6 +40,9 @@ export default function GeneratingScreen() {
   }, []);
 
   useEffect(() => {
+    let transitionTimeout: ReturnType<typeof setTimeout>;
+    let completionTimeout: ReturnType<typeof setTimeout>;
+
     async function executeGeneration() {
       if (!user?.id) return;
       
@@ -55,7 +58,7 @@ export default function GeneratingScreen() {
         setCompletedSteps(loadingSteps.length); // Force complete the last step
         
         // Timeout just to make sure they see the final checkmark briefly
-        setTimeout(() => {
+        completionTimeout = setTimeout(() => {
             router.replace('/(tabs)' as any);
         }, 1200);
       } catch (error) {
@@ -67,7 +70,12 @@ export default function GeneratingScreen() {
     }
 
     // Small timeout to allow UI transition before blocking JS thread
-    setTimeout(executeGeneration, 500);
+    transitionTimeout = setTimeout(executeGeneration, 500);
+
+    return () => {
+      clearTimeout(transitionTimeout);
+      clearTimeout(completionTimeout);
+    };
   }, [user, data, router]);
 
   return (
