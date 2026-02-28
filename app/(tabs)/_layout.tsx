@@ -59,8 +59,15 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         {/* Right side: Floating Action Button */}
         <TouchableOpacity 
           style={styles.fabButton}
-          onPress={() => console.log('Add Button Pressed')}
+          onPress={() => {
+            // TODO: Route to creating a new tracking log
+            console.log('Navigating to Add Log flow...');
+          }}
           activeOpacity={0.8}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Add new log"
+          accessibilityHint="Navigates to the screen to add a new tracking entry"
         >
           <PlusSignIcon size={28} color={Colors.background} variant="stroke" />
         </TouchableOpacity>
