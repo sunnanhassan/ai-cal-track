@@ -1,5 +1,6 @@
 import { useOAuth, useSignIn } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
+import { LockPasswordIcon, Mail01Icon } from 'hugeicons-react-native';
 import React, { useState } from 'react';
 import {
     Image,
@@ -13,6 +14,7 @@ import {
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { SocialButton } from '../../components/ui/SocialButton';
+import { Colors } from '../../constants/Colors';
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -85,7 +87,7 @@ export default function SignInScreen() {
 
           <Input
             label="Email"
-            icon="mail-outline"
+            icon={Mail01Icon}
             placeholder="Enter your email"
             value={emailAddress}
             onChangeText={setEmailAddress}
@@ -95,7 +97,7 @@ export default function SignInScreen() {
 
           <Input
             label="Password"
-            icon="lock-closed-outline"
+            icon={LockPasswordIcon}
             placeholder="Enter your password"
             value={password}
             onChangeText={setPassword}
@@ -122,7 +124,7 @@ export default function SignInScreen() {
           />
 
           <View style={styles.footerContainer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <Link href="/(auth)/sign-up">
               <Text style={styles.footerLink}>Sign Up</Text>
             </Link>
@@ -136,7 +138,7 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -156,12 +158,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: Colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#94A3B8',
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   formContainer: {
@@ -175,10 +177,10 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#334155',
+    backgroundColor: Colors.border,
   },
   dividerText: {
-    color: '#64748B',
+    color: Colors.iconMuted,
     paddingHorizontal: 16,
     fontSize: 12,
     fontWeight: '600',
@@ -190,22 +192,22 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   footerText: {
-    color: '#94A3B8',
+    color: Colors.textMuted,
     fontSize: 14,
   },
   footerLink: {
-    color: '#22c55e',
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '700',
   },
   globalError: {
-    color: '#EF4444',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    color: Colors.error,
+    backgroundColor: Colors.errorBackground,
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: Colors.errorBorder,
     textAlign: 'center',
     overflow: 'hidden',
   },

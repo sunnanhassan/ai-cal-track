@@ -9,6 +9,7 @@ import {
     TouchableOpacityProps,
     ViewStyle,
 } from 'react-native';
+import { Colors } from '../../constants/Colors';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -53,7 +54,7 @@ export const Button = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={isPrimary ? '#0F172A' : '#22c55e'} />
+        <ActivityIndicator color={isPrimary ? Colors.textDark : Colors.primary} />
       ) : (
         <>
           {icon && icon}
@@ -87,20 +88,20 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   primaryBg: {
-    backgroundColor: '#22c55e', // Vibrant Green
-    shadowColor: '#22c55e',
+    backgroundColor: Colors.primary, // Vibrant Green
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   secondaryBg: {
-    backgroundColor: '#1E293B',
+    backgroundColor: Colors.surface,
   },
   outlineBg: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#334155',
+    borderColor: Colors.border,
   },
   ghostBg: {
     backgroundColor: 'transparent',
@@ -114,15 +115,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   primaryText: {
-    color: '#0F172A', // Dark slate for contrast on green
+    color: Colors.textDark, // Dark slate for contrast on green
   },
   secondaryText: {
-    color: '#F8FAFC',
+    color: Colors.text,
   },
   outlineText: {
-    color: '#F8FAFC',
+    color: Colors.text,
   },
   ghostText: {
-    color: '#94A3B8',
+    color: Colors.textMuted,
   },
 });

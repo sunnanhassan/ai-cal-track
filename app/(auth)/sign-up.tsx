@@ -1,18 +1,20 @@
 import { useOAuth, useSignUp } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
+import { Key01Icon, LockPasswordIcon, Mail01Icon, UserIcon } from 'hugeicons-react-native';
 import React, { useState } from 'react';
 import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { SocialButton } from '../../components/ui/SocialButton';
+import { Colors } from '../../constants/Colors';
 import { saveUserToFirestore } from '../../lib/auth-store';
 
 export default function SignUpScreen() {
@@ -93,7 +95,7 @@ export default function SignUpScreen() {
 
   const onSelectGoogleAuth = async () => {
     try {
-      const { createdSessionId, setActive, signIn, signUp } = await startOAuthFlow();
+      const { createdSessionId, setActive, signUp } = await startOAuthFlow();
       if (createdSessionId && setActive) {
         
         await setActive({ session: createdSessionId });
@@ -134,7 +136,7 @@ export default function SignUpScreen() {
           <View style={[styles.formContainer, { marginTop: 32 }]}>
             <Input
               label="Verification Code"
-              icon="key-outline"
+              icon={Key01Icon}
               placeholder="Enter the 6-digit code"
               value={code}
               onChangeText={setCode}
@@ -172,7 +174,7 @@ export default function SignUpScreen() {
             <View style={{ flex: 1, marginRight: 8 }}>
               <Input
                 label="First Name"
-                icon="person-outline"
+                icon={UserIcon}
                 placeholder="John"
                 value={firstName}
                 onChangeText={setFirstName}
@@ -181,7 +183,7 @@ export default function SignUpScreen() {
             <View style={{ flex: 1, marginLeft: 8 }}>
               <Input
                 label="Last Name"
-                icon="person-outline"
+                icon={UserIcon}
                 placeholder="Doe"
                 value={lastName}
                 onChangeText={setLastName}
@@ -191,7 +193,7 @@ export default function SignUpScreen() {
 
           <Input
             label="Email"
-            icon="mail-outline"
+            icon={Mail01Icon}
             placeholder="Enter your email"
             value={emailAddress}
             onChangeText={setEmailAddress}
@@ -201,7 +203,7 @@ export default function SignUpScreen() {
 
           <Input
             label="Password"
-            icon="lock-closed-outline"
+            icon={LockPasswordIcon}
             placeholder="Create a password"
             value={password}
             onChangeText={setPassword}
@@ -242,7 +244,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -262,12 +264,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: Colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#94A3B8',
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   formContainer: {
@@ -285,10 +287,10 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#334155',
+    backgroundColor: Colors.border,
   },
   dividerText: {
-    color: '#64748B',
+    color: Colors.iconMuted,
     paddingHorizontal: 16,
     fontSize: 12,
     fontWeight: '600',
@@ -300,22 +302,22 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   footerText: {
-    color: '#94A3B8',
+    color: Colors.textMuted,
     fontSize: 14,
   },
   footerLink: {
-    color: '#22c55e',
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '700',
   },
   globalError: {
-    color: '#EF4444',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    color: Colors.error,
+    backgroundColor: Colors.errorBackground,
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: Colors.errorBorder,
     textAlign: 'center',
     overflow: 'hidden',
   },

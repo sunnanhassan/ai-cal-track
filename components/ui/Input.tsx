@@ -1,19 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  TextInput as RNTextInput,
-  StyleSheet,
-  Text,
-  TextInputProps,
-  TouchableOpacity,
-  View,
-  ViewStyle,
+    TextInput as RNTextInput,
+    StyleSheet,
+    Text,
+    TextInputProps,
+    TouchableOpacity,
+    View,
+    ViewStyle,
 } from 'react-native';
+import { Colors } from '../../constants/Colors';
 
 interface InputProps extends TextInputProps {
   label?: string;
+  icon?: any; // Change from keyof typeof Ionicons.glyphMap to accept Hmm Icons
   error?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
   isPassword?: boolean;
   containerStyle?: ViewStyle;
 }
@@ -21,7 +22,7 @@ interface InputProps extends TextInputProps {
 export const Input = ({
   label,
   error,
-  icon,
+  icon: Icon,
   isPassword,
   style,
   containerStyle,
@@ -42,18 +43,24 @@ export const Input = ({
           containerStyle,
         ]}
       >
-        {icon && (
-          <Ionicons
-            name={icon}
-            size={20}
-            color={isFocused ? '#22c55e' : '#64748B'}
-            style={styles.icon}
-          />
+        {Icon && (
+          <View style={styles.icon}>
+            <Icon
+              size={20}
+              color={
+                error
+                  ? Colors.error
+                  : isFocused
+                    ? Colors.primary
+                    : Colors.iconMuted
+              }
+            />
+          </View>
         )}
         
         <RNTextInput
           style={[styles.input, style]}
-          placeholderTextColor="#64748B"
+          placeholderTextColor={Colors.iconMuted}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           secureTextEntry={isPassword && !showPassword}
@@ -68,7 +75,7 @@ export const Input = ({
             <Ionicons
               name={showPassword ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color="#64748B"
+              color={Colors.iconMuted}
             />
           </TouchableOpacity>
         )}
@@ -85,7 +92,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    color: '#E2E8F0',
+    color: Colors.inputBorder,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
@@ -94,26 +101,26 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
+    borderColor: Colors.surface,
     height: 56,
     paddingHorizontal: 16,
   },
   inputContainerFocused: {
-    borderColor: '#22c55e',
-    backgroundColor: '#0F172A',
+    borderColor: Colors.primary,
+    backgroundColor: Colors.background,
   },
   inputContainerError: {
-    borderColor: '#EF4444',
+    borderColor: Colors.error,
   },
   icon: {
     marginRight: 10,
   },
   input: {
     flex: 1,
-    color: '#F8FAFC',
+    color: Colors.text,
     fontSize: 16,
     height: '100%',
   },
@@ -121,7 +128,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   error: {
-    color: '#EF4444',
+    color: Colors.error,
     fontSize: 12,
     marginTop: 6,
     marginLeft: 4,

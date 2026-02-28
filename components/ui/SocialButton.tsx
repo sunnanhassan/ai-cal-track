@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     ViewStyle
 } from 'react-native';
+import { Colors } from '../../constants/Colors';
 
 interface SocialButtonProps {
   title: string;
@@ -36,13 +37,13 @@ export const SocialButton = ({
       accessibilityState={{ disabled: isLoading }}
     >
       {isLoading ? (
-        <ActivityIndicator color="#F8FAFC" />
+        <ActivityIndicator color={Colors.text} />
       ) : (
         <>
           {iconType === 'google' ? (
             <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.icon} />
           ) : (
-            <Ionicons name="logo-apple" size={22} color="#F8FAFC" style={styles.icon} />
+            <Ionicons name="logo-apple" size={22} color={Colors.text} style={styles.icon} />
           )}
           <Text style={styles.text}>{title}</Text>
         </>
@@ -54,20 +55,20 @@ export const SocialButton = ({
 const styles = StyleSheet.create({
   container: {
     height: 56,
-    backgroundColor: '#1E293B',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#334155',
+    borderColor: Colors.border,
     marginVertical: 8,
   },
   icon: {
     marginRight: 12,
   },
   text: {
-    color: '#F8FAFC',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: '600',
   },

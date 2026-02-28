@@ -1,6 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { Button } from "../components/ui/Button";
+import { Colors } from "../constants/Colors";
 
 export default function Index() {
   const { user } = useUser();
@@ -36,7 +37,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: Colors.background,
     padding: 24,
     justifyContent: 'space-between',
   },
@@ -54,13 +55,13 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#F8FAFC',
+    color: Colors.text,
     textAlign: 'center',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: '#94A3B8',
+    color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 24,
   },
