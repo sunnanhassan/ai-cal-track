@@ -3,15 +3,27 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const onboardingEmitter = {
-  listeners: new Set<() => void>(),
+  listeners: new Map<string, Set<() => void>>(),
   addEventListener(event: string, callback: () => void) {
-    this.listeners.add(callback);
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)?.add(callback);
   },
   removeEventListener(event: string, callback: () => void) {
-    this.listeners.delete(callback);
+    const eventSet = this.listeners.get(event);
+    if (eventSet) {
+      eventSet.delete(callback);
+      if (eventSet.size === 0) {
+        this.listeners.delete(event);
+      }
+    }
   },
   dispatchEvent(event: string) {
-    this.listeners.forEach(cb => cb());
+    const eventSet = this.listeners.get(event);
+    if (eventSet) {
+      eventSet.forEach(cb => cb());
+    }
   }
 };
 

@@ -12,7 +12,7 @@ export default function Profile() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
-        <Text style={styles.subtitle}>{user?.emailAddresses[0]?.emailAddress}</Text>
+        <Text style={styles.subtitle}>{user?.emailAddresses?.[0]?.emailAddress ?? 'No email provided'}</Text>
       </View>
       
       <View style={styles.content}>
