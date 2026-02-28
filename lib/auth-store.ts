@@ -2,6 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
+export const onboardingEmitter = {
+  listeners: new Set<() => void>(),
+  addEventListener(event: string, callback: () => void) {
+    this.listeners.add(callback);
+  },
+  removeEventListener(event: string, callback: () => void) {
+    this.listeners.delete(callback);
+  },
+  dispatchEvent(event: string) {
+    this.listeners.forEach(cb => cb());
+  }
+};
+
 export const saveUserToFirestore = async (user: {
   id: string;
   email: string | undefined;
@@ -50,6 +63,10 @@ export const completeOnboarding = async (userId: string, onboardingData: any, ai
     }, { merge: true });
 
     await AsyncStorage.setItem(`onboarding_${userId}`, JSON.stringify(true));
+    
+    // Dispatch event so root layout can catch it immediately
+    onboardingEmitter.dispatchEvent('onboardingCompleted');
+
     return true;
   } catch (error) {
     console.error('Error completing onboarding in Firestore:', error);
