@@ -56,13 +56,13 @@ export default function GeneratingScreen() {
         
         // Timeout just to make sure they see the final checkmark briefly
         setTimeout(() => {
-            router.replace('/' as any);
+            router.replace('/(tabs)' as any);
         }, 1200);
       } catch (error) {
         console.error("AI Generation Failed: ", error);
         // Fallback to complete onboarding anyway so the user isn't stuck
         await completeOnboarding(user.id, data);
-        router.replace('/' as any);
+        router.replace('/(tabs)' as any);
       }
     }
 
