@@ -1,16 +1,27 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { ChartHistogramIcon, Home01Icon, PlusSignIcon, UserIcon } from 'hugeicons-react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FABMenuModal from '../../components/ui/FABMenuModal';
 import { Colors } from '../../constants/Colors';
 
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [isFABMenuVisible, setFABMenuVisible] = useState(false);
   
+  // Determine if the current screen wants to hide the tab bar
+  const focusedRoute = state.routes[state.index];
+  const focusedOptions = descriptors[focusedRoute.key].options;
+  if ((focusedOptions as any).tabBarStyle?.display === 'none') {
+    return null;
+  }
+
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <>
+      <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
       <View style={styles.tabContent}>
         
         {/* Left side: Navigation Tabs */}
@@ -59,10 +70,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         {/* Right side: Floating Action Button */}
         <TouchableOpacity 
           style={styles.fabButton}
-          onPress={() => {
-            // TODO: Route to creating a new tracking log
-            console.log('Navigating to Add Log flow...');
-          }}
+          onPress={() => setFABMenuVisible(true)}
           activeOpacity={0.8}
           accessible={true}
           accessibilityRole="button"
@@ -74,6 +82,11 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
       </View>
     </View>
+    <FABMenuModal 
+      visible={isFABMenuVisible} 
+      onClose={() => setFABMenuVisible(false)} 
+    />
+    </>
   );
 }
 
@@ -88,6 +101,10 @@ export default function TabLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="analytics" />
       <Tabs.Screen name="profile" />
+      <Tabs.Screen name="log-exercise" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="log-exercise-details" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="log-exercise-manual" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="log-exercise-result" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }
