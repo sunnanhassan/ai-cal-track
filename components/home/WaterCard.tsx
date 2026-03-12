@@ -1,6 +1,7 @@
 import { useUser } from '@clerk/clerk-expo';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { DropletIcon, PencilEdit02Icon } from 'hugeicons-react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { PencilEdit02Icon } from 'hugeicons-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -22,6 +23,7 @@ export default function WaterCard() {
     totalFat: 0,
     totalCarbs: 0,
     totalWaterMl: 0,
+    totalBurnedCalories: 0,
   });
 
   // Edit Modal State
@@ -57,6 +59,7 @@ export default function WaterCard() {
           totalFat: data.totalFat || 0,
           totalCarbs: data.totalCarbs || 0,
           totalWaterMl: data.totalWaterMl || 0,
+          totalBurnedCalories: data.totalBurnedCalories || 0,
         });
       } else {
         setConsumed({
@@ -65,6 +68,7 @@ export default function WaterCard() {
           totalFat: 0,
           totalCarbs: 0,
           totalWaterMl: 0,
+          totalBurnedCalories: 0,
         });
       }
     });
@@ -115,22 +119,34 @@ export default function WaterCard() {
         const isFull = i < fullGlasses;
         const isHalf = i === fullGlasses && isHalfGlass;
         
-        let color = Colors.iconMuted; 
-        let opacity = 0.25;
-        
-        if (isFull) {
-            color = Colors.primary; 
-            opacity = 1.0;
-        } else if (isHalf) {
-            color = Colors.primary; 
-            opacity = 0.5;
-        }
+        const scaleStyle = (isFull || isHalf) ? { transform: [{ scale: 1.25 }] } : { transform: [{ scale: 0.95 }] };
 
-        glasses.push(
-            <View key={i} style={[styles.glassWrapper, { opacity }]}>
-                <DropletIcon size={24} color={color} variant="stroke" />
-            </View>
-        );
+        if (isFull) {
+            glasses.push(
+                <View key={i} style={[styles.glassWrapper, scaleStyle]}>
+                    <MaterialCommunityIcons name="cup" size={28} color="#3B82F6" />
+                </View>
+            );
+        } else if (isHalf) {
+            glasses.push(
+                <View key={i} style={[styles.glassWrapper, scaleStyle]}>
+                   <View style={styles.glassIconLayer}>
+                      <MaterialCommunityIcons name="cup-outline" size={28} color="#60A5FA" />
+                   </View>
+                   <View style={styles.halfMask}>
+                     <View style={styles.halfIconLayer}>
+                        <MaterialCommunityIcons name="cup" size={28} color="#3B82F6" />
+                     </View>
+                   </View>
+                </View>
+            );
+        } else {
+            glasses.push(
+                <View key={i} style={[styles.glassWrapper, scaleStyle]}>
+                    <MaterialCommunityIcons name="cup-outline" size={28} color="#93C5FD" style={{ opacity: 0.8 }} />
+                </View>
+            );
+        }
     }
     return glasses;
   };
@@ -247,8 +263,33 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   glassWrapper: {
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  glassIconLayer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  halfMask: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+    overflow: 'hidden',
+  },
+  halfIconLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 28, 
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   footerContainer: {
     paddingTop: 16,

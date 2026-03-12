@@ -63,7 +63,7 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
                 <TouchableOpacity 
                   style={styles.card} 
                   activeOpacity={0.7}
-                  onPress={() => handleNavigation('/(tabs)/add-log')}
+                  onPress={() => handleNavigation('/(tabs)/log-water')}
                 >
                   <View style={[styles.iconBox, { backgroundColor: '#DBEAFE' }]}>
                     <DropletIcon size={28} color="#3B82F6" variant="stroke" />
