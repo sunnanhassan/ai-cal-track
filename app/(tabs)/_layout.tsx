@@ -106,6 +106,9 @@ export default function TabLayout() {
       <Tabs.Screen name="log-exercise-manual" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="log-exercise-result" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="log-water" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="log-food" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="log-food-details" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="log-food-scan" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }

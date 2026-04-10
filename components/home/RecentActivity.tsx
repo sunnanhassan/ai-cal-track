@@ -1,6 +1,6 @@
 import { useUser } from '@clerk/clerk-expo';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { ClipboardIcon, DropletIcon, FireIcon, Dumbbell02Icon, WorkoutRunIcon } from 'hugeicons-react-native';
+import { ClipboardIcon, DropletIcon, FireIcon, Dumbbell02Icon, WorkoutRunIcon, Pizza01Icon } from 'hugeicons-react-native';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -96,27 +96,48 @@ export default function RecentActivity() {
       );
     }
 
-    // Default Food/Water log UI
+    if (isWaterLog) {
+      return (
+        <View key={entry.id} style={styles.entryCard}>
+          <View style={[styles.entryIconWrapper, { backgroundColor: '#DBEAFE' }]}>
+            <DropletIcon size={24} color="#3B82F6" variant="stroke" />
+          </View>
+          
+          <View style={styles.entryInfo}>
+            <View style={styles.entryHeaderRow}>
+               <Text style={styles.entryTitle}>Water</Text>
+               <Text style={styles.entryTimeRow}>{formatTime(entry.createdAt)}</Text>
+            </View>
+            <Text style={styles.entryDetails}>{entry.waterMl} ml logged</Text>
+          </View>
+        </View>
+      );
+    }
+
+    // Default: Food log UI
     return (
       <View key={entry.id} style={styles.entryCard}>
-        <View style={[styles.entryIconWrapper, { backgroundColor: isWaterLog ? '#DBEAFE' : '#F0FDF4' }]}>
-          {isWaterLog ? (
-            <DropletIcon size={20} color="#3B82F6" variant="stroke" />
-          ) : (
-            <Text style={{ fontSize: 20 }}>🍽️</Text>
-          )}
+        <View style={[styles.entryIconWrapper, { backgroundColor: '#FFEDD5' }]}>
+           <Pizza01Icon size={24} color="#F97316" variant="stroke" />
         </View>
         
         <View style={styles.entryInfo}>
-          <Text style={styles.entryTitle}>
-            {isWaterLog ? 'Water Logged' : (entry.name || 'Meal Logged')}
-          </Text>
+          <View style={styles.entryHeaderRow}>
+            <Text style={[styles.entryTitle, { flex: 1 }]} numberOfLines={1}>
+              {entry.name || 'Meal'}
+            </Text>
+            <Text style={styles.entryTimeRow}>{formatTime(entry.createdAt)}</Text>
+          </View>
+          
+          <View style={styles.exerciseMetricsRow}>
+            <FireIcon size={14} color="#F97316" variant="stroke" />
+            <Text style={[styles.exerciseCaloriesText, { color: '#F97316' }]}>{entry.calories} kcal</Text>
+          </View>
+          
           <Text style={styles.entryDetails}>
-             {isWaterLog ? `${entry.waterMl} ml` : `${entry.calories} kcal • P: ${entry.protein}g F: ${entry.fat}g C: ${entry.carbs}g`}
+             {entry.intensity ? `${entry.intensity}` : '1 serving'} • P:{entry.protein}g F:{entry.fat}g C:{entry.carbs}g
           </Text>
         </View>
-        
-        <Text style={styles.entryTime}>{formatTime(entry.createdAt)}</Text>
       </View>
     );
   };

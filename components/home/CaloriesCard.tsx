@@ -146,10 +146,14 @@ export default function CaloriesCard() {
           size={300}
           strokeWidth={50}
           value={remaining}
-          label="Remaining"
+          label={`Remaining (Goal: ${effectiveTargetCalories})`}
           segments={12}
           gapAngle={8}
         />
+        <View style={styles.eatenTextBubble}>
+           <FireIcon size={14} color="#EF4444" variant="stroke" />
+           <Text style={styles.eatenText}>{currentCalories} kcal consumed</Text>
+        </View>
       </View>
 
       {/* Macro Boxes */}
@@ -295,6 +299,23 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     // Provide responsive scaling just in case the hardcoded 'size=300' exceeds micro-screens
     transform: [{ scale: 0.95 }], 
+    position: 'relative',
+  },
+  eatenTextBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 12,
+    gap: 4,
+  },
+  eatenText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
   },
   macrosContainer: {
     flexDirection: 'row',

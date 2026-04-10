@@ -12,15 +12,29 @@ export async function POST(request: Request) {
 
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     const body = await request.json();
-    const { prompt } = body;
+    const { prompt, imageBase64, mimeType } = body;
 
-    if (!prompt) {
-      return Response.json({ error: 'Missing prompt' }, { status: 400 });
+    if (!prompt && !imageBase64) {
+      return Response.json({ error: 'Missing prompt or image' }, { status: 400 });
+    }
+
+    const parts: any[] = [];
+    if (prompt) {
+      parts.push(prompt); // @google/genai accepts string as text part
+    }
+    
+    if (imageBase64) {
+      parts.push({
+        inlineData: {
+          data: imageBase64,
+          mimeType: mimeType || 'image/jpeg'
+        }
+      });
     }
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
+      contents: parts,
       config: {
         temperature: 0.2,
         responseMimeType: 'application/json',
