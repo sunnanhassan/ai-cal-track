@@ -9,6 +9,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
 import { Button } from '../../components/ui/Button';
@@ -23,6 +24,8 @@ export default function SignInScreen() {
 
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState(''); // Added for 2FA
+  const [pending2FA, setPending2FA] = useState(false); // Added for 2FA
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,6 +43,9 @@ export default function SignInScreen() {
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace('/');
+      } else if (signInAttempt.status === 'needs_second_factor') {
+        await signIn.prepareSecondFactor({ strategy: 'email_code' });
+        setPending2FA(true);
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
         setError('Sign in requires further action.');
@@ -47,6 +53,31 @@ export default function SignInScreen() {
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
       setError(err.errors?.[0]?.message || 'Failed to sign in. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onVerifyPress = async () => {
+    if (!isLoaded) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const signInAttempt = await signIn.attemptSecondFactor({
+        strategy: 'email_code',
+        code,
+      });
+
+      if (signInAttempt.status === 'complete') {
+        await setActive({ session: signInAttempt.createdSessionId });
+        router.replace('/');
+      } else {
+        setError('Failed to verify code.');
+      }
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.message || 'Invalid verification code.');
     } finally {
       setLoading(false);
     }
@@ -85,50 +116,81 @@ export default function SignInScreen() {
         <View style={styles.formContainer}>
           {error ? <Text style={styles.globalError}>{error}</Text> : null}
 
-          <Input
-            label="Email"
-            icon={Mail01Icon}
-            placeholder="Enter your email"
-            value={emailAddress}
-            onChangeText={setEmailAddress}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
+          {pending2FA ? (
+            <>
+              <Text style={{ color: Colors.text, marginBottom: 16, textAlign: 'center' }}>
+                We sent a 2-step verification code to your email.
+              </Text>
+              <Input
+                label="Verification Code"
+                icon={LockPasswordIcon}
+                placeholder="Enter 6-digit code"
+                value={code}
+                onChangeText={setCode}
+                keyboardType="numeric"
+              />
+              <Button
+                title="Verify Code"
+                onPress={onVerifyPress}
+                isLoading={loading}
+                style={{ marginTop: 8 }}
+              />
+              <TouchableOpacity onPress={() => setPending2FA(false)} style={{ marginTop: 16 }}>
+                 <Text style={{ color: Colors.textMuted, textAlign: 'center', fontWeight: '600' }}>Back to Sign In</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Input
+                label="Email"
+                icon={Mail01Icon}
+                placeholder="Enter your email"
+                value={emailAddress}
+                onChangeText={setEmailAddress}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
 
-          <Input
-            label="Password"
-            icon={LockPasswordIcon}
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            isPassword
-          />
+              <Input
+                label="Password"
+                icon={LockPasswordIcon}
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                isPassword
+              />
 
-          <Button
-            title="Sign In"
-            onPress={onSignInPress}
-            isLoading={loading}
-            style={{ marginTop: 8 }}
-          />
+              <Button
+                title="Sign In"
+                onPress={onSignInPress}
+                isLoading={loading}
+                style={{ marginTop: 8 }}
+              />
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>OR SIGN IN WITH</Text>
-            <View style={styles.divider} />
-          </View>
+          {!pending2FA && (
+            <>
+              <View style={styles.dividerContainer}>
+                <View style={styles.divider} />
+                <Text style={styles.dividerText}>OR SIGN IN WITH</Text>
+                <View style={styles.divider} />
+              </View>
 
-          <SocialButton
-            title="Continue with Google"
-            iconType="google"
-            onPress={onSelectGoogleAuth}
-          />
+              <SocialButton
+                title="Continue with Google"
+                iconType="google"
+                onPress={onSelectGoogleAuth}
+              />
 
-          <View style={styles.footerContainer}>
-            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
-            <Link href="/(auth)/sign-up">
-              <Text style={styles.footerLink}>Sign Up</Text>
-            </Link>
-          </View>
+              <View style={styles.footerContainer}>
+                <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+                <Link href="/(auth)/sign-up">
+                  <Text style={styles.footerLink}>Sign Up</Text>
+                </Link>
+              </View>
+            </>
+          )}
+            </>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

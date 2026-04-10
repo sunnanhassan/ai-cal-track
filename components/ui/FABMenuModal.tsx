@@ -1,7 +1,9 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { AppleIcon, DropletIcon, Dumbbell02Icon, QrCodeIcon, StarIcon } from 'hugeicons-react-native';
 import React from 'react';
-import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useFoodStore } from '../../lib/food-store';
 import { Colors } from '../../constants/Colors';
 
 interface FABMenuModalProps {
@@ -23,10 +25,67 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
     }, 150);
   };
 
-  const handlePremiumAlert = () => {
+  const handleScanFoodPress = () => {
     onClose();
     setTimeout(() => {
-      alert("This is a Premium feature. Upgrade to scan food directly!");
+      Alert.alert(
+        "Scan Food",
+        "How would you like to provide the image?",
+        [
+          {
+            text: "Take Picture",
+            onPress: async () => {
+              const { status } = await ImagePicker.requestCameraPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Sorry, we need camera permissions to make this work!');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+                base64: true,
+              });
+
+              if (!result.canceled && result.assets[0]) {
+                const { setScannedImageUri, setScannedImageBase64 } = useFoodStore.getState();
+                setScannedImageUri(result.assets[0].uri);
+                setScannedImageBase64(result.assets[0].base64 || null);
+                router.push('/(tabs)/log-food-scan');
+              }
+            }
+          },
+          {
+            text: "Upload from Gallery",
+            onPress: async () => {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+                base64: true,
+              });
+
+              if (!result.canceled && result.assets[0]) {
+                const { setScannedImageUri, setScannedImageBase64 } = useFoodStore.getState();
+                setScannedImageUri(result.assets[0].uri);
+                setScannedImageBase64(result.assets[0].base64 || null);
+                router.push('/(tabs)/log-food-scan');
+              }
+            }
+          },
+          {
+            text: "Cancel",
+            style: "cancel"
+          }
+        ]
+      );
     }, 150);
   };
 
@@ -76,7 +135,7 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
                 <TouchableOpacity 
                   style={styles.card} 
                   activeOpacity={0.7}
-                  onPress={() => handleNavigation('/(tabs)/add-log')}
+                  onPress={() => handleNavigation('/(tabs)/log-food')}
                 >
                   <View style={[styles.iconBox, { backgroundColor: '#DCFCE7' }]}>
                     <AppleIcon size={28} color="#22C55E" variant="stroke" />
@@ -89,7 +148,7 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
                 <TouchableOpacity 
                   style={styles.card} 
                   activeOpacity={0.7}
-                  onPress={handlePremiumAlert}
+                  onPress={handleScanFoodPress}
                 >
                   <View style={styles.premiumBadge}>
                     <StarIcon size={12} color="#FFFFFF" variant="stroke" />

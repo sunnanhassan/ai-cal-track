@@ -61,6 +61,7 @@ function InitialLayout() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
+    const isIndex = segments.length === 0;
 
     const isGeneratingScreen = typeof window !== 'undefined' ? window.location?.pathname?.includes('generating') : false;
     
@@ -70,9 +71,9 @@ function InitialLayout() {
 
     if (isSignedIn && isOnboardingComplete === false && !inOnboardingGroup) {
       router.replace('/(onboarding)/step-1' as any);
-    } else if (isSignedIn && isOnboardingComplete === true && (inAuthGroup || (inOnboardingGroup && !isActuallyGenerating))) {
+    } else if (isSignedIn && isOnboardingComplete === true && (isIndex || inAuthGroup || (inOnboardingGroup && !isActuallyGenerating))) {
       router.replace('/(tabs)' as any);
-    } else if (!isSignedIn && !inAuthGroup) {
+    } else if (!isSignedIn && (!inAuthGroup || isIndex)) {
       router.replace('/(auth)/sign-in' as any);
     }
 
