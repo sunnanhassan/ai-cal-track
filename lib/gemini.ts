@@ -142,7 +142,7 @@ export async function analyzeFoodImage(base64Image: string): Promise<FoodNutriti
     const modelsToTry = [
       'gemini-2.5-flash',
       'gemini-2.5-flash-lite',
-      'gemini-flash-latest'
+      'gemini-1.5-flash'
     ];
 
     let response;
