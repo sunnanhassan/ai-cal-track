@@ -13,7 +13,7 @@ import {
   serverTimestamp,
   updateDoc
 } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -27,8 +27,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../components/ui/Button";
-import { Colors } from "../constants/Colors";
 import { db } from "../lib/firebase";
+import { useTheme } from "../context/ThemeContext";
 
 interface FeatureRequest {
   id: string;
@@ -43,6 +43,10 @@ interface FeatureRequest {
 export default function RequestFeature() {
   const { user } = useUser();
   const router = useRouter();
+  const { colors } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [features, setFeatures] = useState<FeatureRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,7 +63,6 @@ export default function RequestFeature() {
         ...doc.data()
       } as FeatureRequest));
       
-      // Sort by upvote count descending
       fetched.sort((a, b) => (b.upvotes?.length || 0) - (a.upvotes?.length || 0));
       
       setFeatures(fetched);
@@ -79,7 +82,7 @@ export default function RequestFeature() {
         description: newDesc.trim(),
         userId: user.id,
         userName: user.fullName || "Anonymous User",
-        upvotes: [user.id], // Auto-upvote by creator
+        upvotes: [user.id], 
         createdAt: serverTimestamp(),
       });
       setNewTitle("");
@@ -135,7 +138,7 @@ export default function RequestFeature() {
           <Ionicons 
             name={hasUpvoted ? "chevron-up" : "chevron-up-outline"} 
             size={24} 
-            color={hasUpvoted ? Colors.primary : Colors.textMuted} 
+            color={hasUpvoted ? colors.primary : colors.textMuted} 
           />
           <Text style={[styles.upvoteCount, hasUpvoted && styles.upvoteCountActive]}>
             {upvoteCount}
@@ -153,7 +156,7 @@ export default function RequestFeature() {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={28} color={Colors.text} />
+            <Ionicons name="chevron-back" size={28} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Feature Requests</Text>
           <View style={{ width: 40 }} />
@@ -170,14 +173,14 @@ export default function RequestFeature() {
               <TextInput
                 style={styles.input}
                 placeholder="What should we build next?"
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 value={newTitle}
                 onChangeText={setNewTitle}
               />
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Optional description..."
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={colors.textMuted}
                 value={newDesc}
                 onChangeText={setNewDesc}
                 multiline
@@ -189,15 +192,16 @@ export default function RequestFeature() {
                 isLoading={submitting}
                 style={styles.submitButton}
                 disabled={!newTitle.trim()}
+                textColor={colors.background}
               />
             </View>
           }
           ListEmptyComponent={
             loading ? (
-              <ActivityIndicator size="small" color={Colors.primary} style={{ marginTop: 40 }} />
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 40 }} />
             ) : (
               <View style={styles.emptyContainer}>
-                <Ionicons name="bulb-outline" size={48} color={Colors.border} />
+                <Ionicons name="bulb-outline" size={48} color={colors.border} />
                 <Text style={styles.emptyText}>No requests yet. Be the first!</Text>
               </View>
             )
@@ -208,10 +212,10 @@ export default function RequestFeature() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -228,20 +232,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: Colors.text,
+    color: colors.text,
   },
   listContent: {
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
   formCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 24,
     marginTop: 12,
     marginBottom: 32,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -251,18 +255,18 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 16,
   },
   input: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderRadius: 16,
     padding: 16,
-    color: Colors.text,
+    color: colors.text,
     fontSize: 15,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   textArea: {
     height: 80,
@@ -274,12 +278,12 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     flexDirection: "row",
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     alignItems: "center",
   },
   featureInfo: {
@@ -289,18 +293,18 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 4,
   },
   featureDesc: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 20,
     marginBottom: 8,
   },
   featureAuthor: {
     fontSize: 11,
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -308,25 +312,25 @@ const styles = StyleSheet.create({
   upvoteButton: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     width: 48,
     height: 56,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   upvoteButtonActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + "10",
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + "10",
   },
   upvoteCount: {
     fontSize: 14,
     fontWeight: "700",
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: -2,
   },
   upvoteCountActive: {
-    color: Colors.primary,
+    color: colors.primary,
   },
   emptyContainer: {
     alignItems: "center",
@@ -334,7 +338,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 15,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 12,
   }
 });

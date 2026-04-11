@@ -1,12 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "../constants/Colors";
+import { useTheme } from "../context/ThemeContext";
 
 export default function PrivacyPolicy() {
   const router = useRouter();
+  const { colors } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const renderSection = (title: string, content: string) => (
     <View style={styles.section}>
@@ -19,7 +22,7 @@ export default function PrivacyPolicy() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color={Colors.text} />
+          <Ionicons name="chevron-back" size={28} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Privacy Policy</Text>
         <View style={{ width: 40 }} />
@@ -72,10 +75,10 @@ export default function PrivacyPolicy() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -92,7 +95,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: Colors.text,
+    color: colors.text,
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -101,13 +104,13 @@ const styles = StyleSheet.create({
   },
   lastUpdated: {
     fontSize: 12,
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: "600",
     marginBottom: 8,
   },
   intro: {
     fontSize: 15,
-    color: Colors.text,
+    color: colors.text,
     lineHeight: 22,
     marginBottom: 24,
     opacity: 0.9,
@@ -118,23 +121,23 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 10,
   },
   sectionContent: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 22,
   },
   footer: {
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: colors.border,
   },
   footerText: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: "center",
     fontStyle: "italic",
   },

@@ -5,9 +5,13 @@ import CaloriesCard from "../../components/home/CaloriesCard";
 import Header from "../../components/home/Header";
 import RecentActivity from "../../components/home/RecentActivity";
 import WaterCard from "../../components/home/WaterCard";
-import { Colors } from "../../constants/Colors";
+import { useTheme } from "../../context/ThemeContext";
+import React, { useMemo } from "react";
 
 export default function Home() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -24,10 +28,10 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -35,16 +39,16 @@ const styles = StyleSheet.create({
   },
   placeholderCard: {
     height: 200,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     marginTop: 24,
   },
   placeholderText: {
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontSize: 16,
     fontWeight: '500',
   }

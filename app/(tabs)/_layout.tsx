@@ -1,18 +1,19 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs, useRouter } from 'expo-router';
 import { ChartHistogramIcon, Home01Icon, PlusSignIcon, UserIcon } from 'hugeicons-react-native';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FABMenuModal from '../../components/ui/FABMenuModal';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../context/ThemeContext';
 
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const { colors } = useTheme();
   const [isFABMenuVisible, setFABMenuVisible] = useState(false);
   
-  // Determine if the current screen wants to hide the tab bar
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const focusedRoute = state.routes[state.index];
   const focusedOptions = descriptors[focusedRoute.key].options;
   if ((focusedOptions as any).tabBarStyle?.display === 'none') {
@@ -22,70 +23,65 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <>
       <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-      <View style={styles.tabContent}>
-        
-        {/* Left side: Navigation Tabs */}
-        <View style={styles.tabItems}>
-          {state.routes.map((route, index) => {
-            const { options } = descriptors[route.key];
-            const isFocused = state.index === index;
+        <View style={styles.tabContent}>
+          <View style={styles.tabItems}>
+            {state.routes.map((route, index) => {
+              const { options } = descriptors[route.key];
+              const isFocused = state.index === index;
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+              const onPress = () => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
-            };
+                if (!isFocused && !event.defaultPrevented) {
+                  navigation.navigate(route.name);
+                }
+              };
 
-            let Icon;
-            if (route.name === 'index') Icon = Home01Icon;
-            else if (route.name === 'analytics') Icon = ChartHistogramIcon;
-            else if (route.name === 'profile') Icon = UserIcon;
+              let Icon;
+              if (route.name === 'index') Icon = Home01Icon;
+              else if (route.name === 'analytics') Icon = ChartHistogramIcon;
+              else if (route.name === 'profile') Icon = UserIcon;
 
-            if (!Icon) return null;
+              if (!Icon) return null;
 
-            return (
-              <TouchableOpacity
-                key={route.key}
-                accessibilityRole="button"
-                accessibilityState={isFocused ? { selected: true } : {}}
-                accessibilityLabel={options.tabBarAccessibilityLabel}
-                onPress={onPress}
-                style={styles.tabItem}
-              >
-                <Icon
-                  size={isFocused ? 28 : 24}
-                  color={isFocused ? Colors.primary : Colors.iconMuted}
-                />
-              </TouchableOpacity>
-            );
-          })}
+              return (
+                <TouchableOpacity
+                  key={route.key}
+                  accessibilityRole="button"
+                  accessibilityState={isFocused ? { selected: true } : {}}
+                  accessibilityLabel={options.tabBarAccessibilityLabel}
+                  onPress={onPress}
+                  style={styles.tabItem}
+                >
+                  <Icon
+                    size={isFocused ? 28 : 24}
+                    color={isFocused ? colors.primary : colors.textMuted}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity 
+            style={styles.fabButton}
+            onPress={() => setFABMenuVisible(true)}
+            activeOpacity={0.8}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Add new log"
+          >
+            <PlusSignIcon size={28} color={colors.background} variant="stroke" />
+          </TouchableOpacity>
         </View>
-
-        {/* Right side: Floating Action Button */}
-        <TouchableOpacity 
-          style={styles.fabButton}
-          onPress={() => setFABMenuVisible(true)}
-          activeOpacity={0.8}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="Add new log"
-          accessibilityHint="Navigates to the screen to add a new tracking entry"
-        >
-          <PlusSignIcon size={28} color={Colors.background} variant="stroke" />
-        </TouchableOpacity>
-
       </View>
-    </View>
-    <FABMenuModal 
-      visible={isFABMenuVisible} 
-      onClose={() => setFABMenuVisible(false)} 
-    />
+      <FABMenuModal 
+        visible={isFABMenuVisible} 
+        onClose={() => setFABMenuVisible(false)} 
+      />
     </>
   );
 }
@@ -113,7 +109,7 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   tabBarContainer: {
     position: 'absolute',
     bottom: 0,
@@ -126,13 +122,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 32,
     padding: 8,
     paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
     ...Platform.select({
       ios: {
-        shadowColor: Colors.textDark,
+        shadowColor: colors.text,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.1,
         shadowRadius: 16,
@@ -157,12 +155,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     ...Platform.select({
         ios: {
-          shadowColor: Colors.primary,
+          shadowColor: colors.primary,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.3,
           shadowRadius: 8,

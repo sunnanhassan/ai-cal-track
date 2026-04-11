@@ -1,14 +1,18 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft02Icon, Search01Icon, PlusSignIcon } from 'hugeicons-react-native';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, TextInput, ActivityIndicator, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/Colors';
 import { FatSecretFood, searchFood } from '../../lib/fatsecret';
 import { useFoodStore } from '../../lib/food-store';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function LogFood() {
   const router = useRouter();
+  const { colors } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FatSecretFood[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +43,6 @@ export default function LogFood() {
   }, [debouncedQuery]);
 
   const parseFoodDescription = (description: string) => {
-    // Expected format e.g. "Per 1 serving - Calories: 300kcal | Fat: 13.00g | Carbs: 32.00g | Protein: 15.00g"
     let servingSize = '1 serving';
     let calories = '0';
     let fat = '0';
@@ -89,53 +92,50 @@ export default function LogFood() {
           {item.brand_name && <Text style={styles.brandName}>{item.brand_name}</Text>}
           <Text style={styles.servingSize}>{servingSize}</Text>
         </View>
-        <View style={styles.rightActions}>
+        <div style={styles.rightActions as any}>
           <View style={styles.calorieBox}>
             <Text style={styles.calorieValue}>{calories}</Text>
             <Text style={styles.calorieLabel}>kcal</Text>
           </View>
           <View style={styles.addButton}>
-             <PlusSignIcon size={20} color={Colors.background} variant="stroke" />
+             <PlusSignIcon size={20} color={colors.background} variant="stroke" />
           </View>
-        </View>
+        </div>
       </TouchableOpacity>
     );
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => router.back()} 
           style={styles.backButton}
           activeOpacity={0.7}
         >
-          <ArrowLeft02Icon size={24} color={Colors.text} variant="stroke" />
+          <ArrowLeft02Icon size={24} color={colors.text} variant="stroke" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Search Food</Text>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
-          <Search01Icon size={20} color={Colors.textMuted} variant="stroke" style={styles.searchIcon} />
+          <Search01Icon size={20} color={colors.textMuted} variant="stroke" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search our database..."
-            placeholderTextColor={Colors.textMuted}
+            placeholderTextColor={colors.textMuted}
             value={query}
             onChangeText={setQuery}
             autoFocus
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {isLoading && <ActivityIndicator color={Colors.primary} size="small" style={styles.loader} />}
+          {isLoading && <ActivityIndicator color={colors.primary} size="small" style={styles.loader} />}
         </View>
         <Text style={styles.searchHint}>Type at least 3 characters to search</Text>
       </View>
 
-      {/* Results List */}
       <FlatList
         data={results}
         keyExtractor={(item, index) => item.food_id || index.toString()}
@@ -148,15 +148,14 @@ export default function LogFood() {
           ) : null
         )}
       />
-
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -168,18 +167,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginLeft: 16,
   },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -188,9 +187,9 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
@@ -201,7 +200,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: Colors.text,
+    color: colors.text,
     height: '100%',
   },
   loader: {
@@ -209,7 +208,7 @@ const styles = StyleSheet.create({
   },
   searchHint: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 8,
     marginLeft: 8,
   },
@@ -219,12 +218,12 @@ const styles = StyleSheet.create({
   },
   foodCard: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -235,23 +234,23 @@ const styles = StyleSheet.create({
   foodName: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 4,
   },
   brandName: {
     fontSize: 13,
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '600',
     marginBottom: 2,
   },
   servingSize: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
   calorieBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 16,
@@ -259,11 +258,11 @@ const styles = StyleSheet.create({
   calorieValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
   },
   calorieLabel: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -276,10 +275,10 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -288,7 +287,7 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     fontSize: 15,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 40,
   }
 });

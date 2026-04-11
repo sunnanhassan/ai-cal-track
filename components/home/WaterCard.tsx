@@ -2,19 +2,22 @@ import { useUser } from '@clerk/clerk-expo';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PencilEdit02Icon } from 'hugeicons-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
 import { useDateStore } from '../../lib/date-store';
 import { db } from '../../lib/firebase';
 import { GeneratedFitnessPlan } from '../../lib/gemini';
 import { DayProgress, fetchUserPlan, formatDateString, updateUserPlan } from '../../lib/tracking';
+import { useTheme } from "../../context/ThemeContext";
 
 const MAX_GLASSES = 9;
 
 export default function WaterCard() {
   const { user } = useUser();
   const selectedDate = useDateStore(state => state.selectedDate);
+  const { colors } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [plan, setPlan] = useState<GeneratedFitnessPlan | null>(null);
   const [consumed, setConsumed] = useState<DayProgress>({
@@ -26,7 +29,6 @@ export default function WaterCard() {
     totalBurnedCalories: 0,
   });
 
-  // Edit Modal State
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -80,7 +82,6 @@ export default function WaterCard() {
     if (!user?.id || !plan) return;
     setIsSaving(true);
     
-    // We parse local float (e.g., 2.5 Liters)
     const newLiters = parseFloat(editForm.waterLiters) || 2.5;
 
     const newPlan: GeneratedFitnessPlan = {
@@ -99,19 +100,16 @@ export default function WaterCard() {
     setIsSaving(false);
   };
 
-  // Calculations
   const targetMl = (plan?.waterIntakeLiters || 2.5) * 1000;
   const consumedMl = consumed.totalWaterMl;
-  
-  // Dynamically calculate how much water each glass represents to fit exactly MAX_GLASSES
   const mlPerGlass = targetMl / MAX_GLASSES;
-  
   const totalGlasses = MAX_GLASSES; 
   const fullGlasses = Math.floor(consumedMl / mlPerGlass);
   const remainderMl = consumedMl % mlPerGlass;
   const isHalfGlass = remainderMl >= (mlPerGlass / 2);
   
-  // Render function for exactly 1 row of up to 9 glasses
+  const activeBlue = colors.theme === 'dark' ? '#60A5FA' : '#3B82F6';
+
   const renderGlasses = () => {
     const glasses = [];
     
@@ -124,18 +122,18 @@ export default function WaterCard() {
         if (isFull) {
             glasses.push(
                 <View key={i} style={[styles.glassWrapper, scaleStyle]}>
-                    <MaterialCommunityIcons name="cup" size={28} color="#3B82F6" />
+                    <MaterialCommunityIcons name="cup" size={28} color={activeBlue} />
                 </View>
             );
         } else if (isHalf) {
             glasses.push(
                 <View key={i} style={[styles.glassWrapper, scaleStyle]}>
                    <View style={styles.glassIconLayer}>
-                      <MaterialCommunityIcons name="cup-outline" size={28} color="#60A5FA" />
+                      <MaterialCommunityIcons name="cup-outline" size={28} color={activeBlue + '80'} />
                    </View>
                    <View style={styles.halfMask}>
                      <View style={styles.halfIconLayer}>
-                        <MaterialCommunityIcons name="cup" size={28} color="#3B82F6" />
+                        <MaterialCommunityIcons name="cup" size={28} color={activeBlue} />
                      </View>
                    </View>
                 </View>
@@ -143,7 +141,7 @@ export default function WaterCard() {
         } else {
             glasses.push(
                 <View key={i} style={[styles.glassWrapper, scaleStyle]}>
-                    <MaterialCommunityIcons name="cup-outline" size={28} color="#93C5FD" style={{ opacity: 0.8 }} />
+                    <MaterialCommunityIcons name="cup-outline" size={28} color={activeBlue + '40'} />
                 </View>
             );
         }
@@ -155,11 +153,10 @@ export default function WaterCard() {
 
   return (
     <View style={styles.card}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Water Intake</Text>
         <TouchableOpacity activeOpacity={0.6} onPress={() => setIsEditModalVisible(true)}>
-          <PencilEdit02Icon size={20} color={Colors.primary} variant="stroke" />
+          <PencilEdit02Icon size={20} color={colors.primary} variant="stroke" />
         </TouchableOpacity>
       </View>
 
@@ -173,11 +170,10 @@ export default function WaterCard() {
       
       <View style={styles.footerContainer}>
           <Text style={styles.footerText}>
-            <Text style={{fontWeight: '800', color: Colors.text}}>{glassesLeft}</Text> glasses left to reach daily goal
+            <Text style={{fontWeight: '800', color: colors.text}}>{glassesLeft}</Text> glasses left to reach daily goal
           </Text>
       </View>
 
-      {/* Edit Goal Modal */}
       <Modal
         visible={isEditModalVisible}
         transparent
@@ -213,7 +209,7 @@ export default function WaterCard() {
                 disabled={isSaving}
               >
                 {isSaving ? (
-                  <ActivityIndicator color={Colors.background} size="small" />
+                  <ActivityIndicator color={colors.background} size="small" />
                 ) : (
                   <Text style={styles.modalSaveText}>Save Goal</Text>
                 )}
@@ -222,18 +218,17 @@ export default function WaterCard() {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 24,
-    marginBottom: 24, // spacing after last card
-    shadowColor: Colors.text,
+    marginBottom: 24,
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.05,
     shadowRadius: 16,
@@ -248,11 +243,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '600',
     marginBottom: 20,
   },
@@ -294,15 +289,14 @@ const styles = StyleSheet.create({
   footerContainer: {
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: colors.border,
     alignItems: 'center',
   },
   footerText: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
-  // Modal Styles exactly as CaloriesCard to ensure UX consistency
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -312,14 +306,14 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '100%',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     padding: 24,
     borderRadius: 24,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -329,22 +323,22 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.textDark,
+    color: colors.textMuted,
     marginBottom: 8,
   },
   modalInput: {
     height: 48,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: Colors.text,
-    backgroundColor: Colors.background,
+    color: colors.text,
+    backgroundColor: colors.background,
   },
   inputHint: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     paddingTop: 8,
     marginLeft: 4,
   },
@@ -358,26 +352,26 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCancelText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
   },
   modalSaveBtn: {
     flex: 1,
     height: 52,
     borderRadius: 26,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalSaveText: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.background,
+    color: colors.textOnPrimary || colors.background,
   }
 });

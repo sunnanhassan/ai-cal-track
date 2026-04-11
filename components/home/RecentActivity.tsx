@@ -1,16 +1,20 @@
 import { useUser } from '@clerk/clerk-expo';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { ClipboardIcon, DropletIcon, FireIcon, Dumbbell02Icon, WorkoutRunIcon, Pizza01Icon } from 'hugeicons-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
 import { useDateStore } from '../../lib/date-store';
 import { db } from '../../lib/firebase';
 import { DailyLog, formatDateString } from '../../lib/tracking';
+import { useTheme } from "../../context/ThemeContext";
 
 export default function RecentActivity() {
   const { user } = useUser();
   const selectedDate = useDateStore(state => state.selectedDate);
+  const { colors, theme: activeTheme } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [entries, setEntries] = useState<DailyLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +41,7 @@ export default function RecentActivity() {
   const renderEmptyState = () => (
     <View style={styles.emptyStateContainer}>
       <View style={styles.emptyIconCircle}>
-        <ClipboardIcon size={32} color={Colors.primary} variant="stroke" />
+        <ClipboardIcon size={32} color={colors.primary} variant="stroke" />
       </View>
       <Text style={styles.emptyTitle}>No Activity Yet</Text>
       <Text style={styles.emptySubtitle}>Log your meals or water intake to see them appear here.</Text>
@@ -46,7 +50,6 @@ export default function RecentActivity() {
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return 'Just now';
-    // Handle Firestore Timestamp
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -55,13 +58,15 @@ export default function RecentActivity() {
     const isWaterLog = entry.waterMl > 0 && entry.calories === 0 && entry.protein === 0 && entry.fat === 0 && entry.carbs === 0;
     const isExerciseLog = (entry.burnedCalories || 0) > 0;
 
+    const isDark = activeTheme === 'dark';
+
     if (isExerciseLog) {
       const isRun = entry.workoutType?.toLowerCase().includes('run') || entry.workoutType?.toLowerCase().includes('cardio');
       const isWeights = entry.workoutType?.toLowerCase().includes('weight');
 
       return (
         <View key={entry.id} style={styles.entryCard}>
-          <View style={[styles.entryIconWrapper, { backgroundColor: isRun ? '#DBEAFE' : '#FEE2E2' }]}>
+          <View style={[styles.entryIconWrapper, { backgroundColor: isRun ? (isDark ? '#3B82F620' : '#DBEAFE') : (isDark ? '#EF444420' : '#FEE2E2') }]}>
             {isRun ? (
               <WorkoutRunIcon size={24} color="#3B82F6" variant="stroke" />
             ) : isWeights ? (
@@ -99,7 +104,7 @@ export default function RecentActivity() {
     if (isWaterLog) {
       return (
         <View key={entry.id} style={styles.entryCard}>
-          <View style={[styles.entryIconWrapper, { backgroundColor: '#DBEAFE' }]}>
+          <View style={[styles.entryIconWrapper, { backgroundColor: isDark ? '#3B82F620' : '#DBEAFE' }]}>
             <DropletIcon size={24} color="#3B82F6" variant="stroke" />
           </View>
           
@@ -114,10 +119,9 @@ export default function RecentActivity() {
       );
     }
 
-    // Default: Food log UI
     return (
       <View key={entry.id} style={styles.entryCard}>
-        <View style={[styles.entryIconWrapper, { backgroundColor: '#FFEDD5' }]}>
+        <View style={[styles.entryIconWrapper, { backgroundColor: isDark ? '#F9731620' : '#FFEDD5' }]}>
            <Pizza01Icon size={24} color="#F97316" variant="stroke" />
         </View>
         
@@ -161,45 +165,45 @@ export default function RecentActivity() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     marginBottom: 40, 
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 16,
   },
   loadingContainer: {
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
   },
   loadingText: {
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
   },
   listContainer: {
     gap: 12,
   },
   emptyStateContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     borderStyle: 'dashed',
   },
   emptyIconCircle: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -207,22 +211,22 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
   },
   entryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 20,
-    shadowColor: Colors.text,
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
@@ -242,17 +246,17 @@ const styles = StyleSheet.create({
   entryTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 4,
   },
   entryDetails: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
   entryTime: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '600',
     alignSelf: 'flex-start',
     marginTop: 4,
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
   },
   entryTimeRow: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
   exerciseMetricsRow: {
@@ -277,6 +281,6 @@ const styles = StyleSheet.create({
   exerciseCaloriesText: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
   }
 });

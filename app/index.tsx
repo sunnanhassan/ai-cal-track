@@ -1,8 +1,9 @@
 import { View } from "react-native";
-import { Colors } from "../constants/Colors";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Index() {
+  const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }} />
+    <View style={{ flex: 1, backgroundColor: colors.background }} />
   );
 }

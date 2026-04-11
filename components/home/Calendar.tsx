@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
-import { Colors } from "../../constants/Colors";
 import { useDateStore } from "../../lib/date-store";
+import { useTheme } from "../../context/ThemeContext";
 
 interface DateItem {
   date: Date;
@@ -51,6 +51,9 @@ export default function Calendar() {
   const setSelectedDate = useDateStore((state) => state.setSelectedDate);
   const flatListRef = useRef<FlatList>(null);
   const { width } = useWindowDimensions();
+  const { colors } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
   
   // Generate 4 weeks (28 days) into the past
   const PAST_WEEKS_COUNT = 4;
@@ -148,7 +151,7 @@ export default function Calendar() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     paddingVertical: 12,
   },
@@ -159,7 +162,7 @@ const styles = StyleSheet.create({
   monthText: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
   },
   weekContainer: {
     flexDirection: 'row',
@@ -177,10 +180,10 @@ const styles = StyleSheet.create({
     borderColor: 'transparent', // Make the basic circle look like the screenshot (dark, no border until selected)
   },
   dateContainerSelected: {
-    backgroundColor: Colors.primary, // Solid green pill background
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary, // Solid green pill background
+    borderColor: colors.primary,
     borderWidth: 1.5,
-    shadowColor: Colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -189,16 +192,16 @@ const styles = StyleSheet.create({
   dayName: {
     fontSize: 11,
     fontWeight: '500',
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginBottom: 4,
     marginTop: 2,
   },
   dayNameToday: {
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '700',
   },
   dayNameSelected: {
-    color: Colors.text, // White text to stand out against solid green background
+    color: colors.textOnPrimary || '#FFFFFF', 
   },
   dayNumberCircle: {
     width: 32,
@@ -213,14 +216,14 @@ const styles = StyleSheet.create({
   dayNumber: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
   },
   dayNumberToday: {
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '800',
   },
   dayNumberSelected: {
-    color: Colors.text, // White text against solid green background
+    color: colors.textOnPrimary || '#FFFFFF',
     fontWeight: '800',
   },
   todayIndicator: {
@@ -229,6 +232,6 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
   }
 });
