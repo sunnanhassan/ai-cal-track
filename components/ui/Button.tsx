@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     ActivityIndicator,
     StyleProp,
@@ -9,7 +9,7 @@ import {
     TouchableOpacityProps,
     ViewStyle,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -19,6 +19,7 @@ interface ButtonProps extends TouchableOpacityProps {
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   icon?: React.ReactNode;
+  textColor?: string;
 }
 
 export const Button = ({
@@ -30,8 +31,12 @@ export const Button = ({
   textStyle,
   icon,
   disabled,
+  textColor,
   ...props
 }: ButtonProps) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const isPrimary = variant === 'primary';
   const isSecondary = variant === 'secondary';
   const isOutline = variant === 'outline';
@@ -54,7 +59,7 @@ export const Button = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={isPrimary ? Colors.textDark : Colors.primary} />
+        <ActivityIndicator color={isPrimary ? colors.background : colors.primary} />
       ) : (
         <>
           {icon && icon}
@@ -66,6 +71,7 @@ export const Button = ({
               isOutline && styles.outlineText,
               isGhost && styles.ghostText,
               icon ? { marginLeft: 8 } : {},
+              textColor ? { color: textColor } : {},
               textStyle,
             ]}
           >
@@ -77,7 +83,7 @@ export const Button = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     height: 56,
     borderRadius: 16,
@@ -88,20 +94,20 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   primaryBg: {
-    backgroundColor: Colors.primary, // Vibrant Green
-    shadowColor: Colors.primary,
+    backgroundColor: colors.primary, 
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   secondaryBg: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
   },
   outlineBg: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   ghostBg: {
     backgroundColor: 'transparent',
@@ -115,15 +121,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   primaryText: {
-    color: Colors.textDark, // Dark slate for contrast on green
+    color: colors.background, 
   },
   secondaryText: {
-    color: Colors.text,
+    color: colors.text,
   },
   outlineText: {
-    color: Colors.text,
+    color: colors.text,
   },
   ghostText: {
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
 });

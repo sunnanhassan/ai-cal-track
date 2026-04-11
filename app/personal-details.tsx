@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,12 +15,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../components/ui/Button";
-import { Colors } from "../constants/Colors";
 import { fetchUserPlan, updateUserPlan } from "../lib/tracking";
+import { useTheme } from "../context/ThemeContext";
 
 export default function PersonalDetails() {
   const { user } = useUser();
   const router = useRouter();
+  const { colors } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -92,7 +96,7 @@ export default function PersonalDetails() {
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.iconBox}>
-          <Ionicons name={icon as any} size={20} color={Colors.primary} />
+          <Ionicons name={icon as any} size={20} color={colors.primary} />
         </View>
         <Text style={styles.cardLabel}>{label}</Text>
       </View>
@@ -103,7 +107,7 @@ export default function PersonalDetails() {
           onChangeText={onChange}
           keyboardType="numeric"
           placeholder={placeholder}
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={colors.textMuted}
         />
         <Text style={styles.unitText}>{unit}</Text>
       </View>
@@ -113,7 +117,7 @@ export default function PersonalDetails() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -126,7 +130,7 @@ export default function PersonalDetails() {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={28} color={Colors.text} />
+            <Ionicons name="chevron-back" size={28} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Personal Details</Text>
           <View style={{ width: 40 }} />
@@ -163,6 +167,7 @@ export default function PersonalDetails() {
               onPress={handleSave}
               isLoading={saving}
               style={styles.saveButton}
+              textColor={colors.background}
             />
           </View>
         </ScrollView>
@@ -171,14 +176,14 @@ export default function PersonalDetails() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -197,7 +202,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: Colors.text,
+    color: colors.text,
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -206,17 +211,17 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 20,
     marginBottom: 24,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: "row",
@@ -227,7 +232,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Colors.primary + "15",
+    backgroundColor: colors.primary + "15",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -235,25 +240,25 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 15,
     fontWeight: "700",
-    color: Colors.text,
+    color: colors.text,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "flex-end",
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: colors.border,
     paddingBottom: 8,
   },
   input: {
     flex: 1,
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.text,
+    color: colors.text,
     padding: 0,
   },
   unitText: {
     fontSize: 16,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginLeft: 8,
     marginBottom: 4,
     fontWeight: "600"

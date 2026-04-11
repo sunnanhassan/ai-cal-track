@@ -2,25 +2,28 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { ArrowLeft02Icon, PlusSignIcon, MinusSignIcon } from 'hugeicons-react-native';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/Colors';
 import { useDateStore } from '../../lib/date-store';
 import { addDailyLog } from '../../lib/tracking';
+import { useTheme } from '../../context/ThemeContext';
 
 const GLASS_ML = 250;
 const HALF_GLASS_ML = 125;
-const MAX_ML = 1000; // Visual cap to 4 glasses
+const MAX_ML = 1000; 
 
 export default function LogWater() {
   const router = useRouter();
   const { user } = useUser();
   const selectedDate = useDateStore(state => state.selectedDate);
+  const { colors, theme: activeTheme } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [waterMl, setWaterMl] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Compute glasses state
   const totalGlassesAllowed = 4;
   const fullGlasses = Math.floor(waterMl / GLASS_ML);
   const hasHalfGlass = (waterMl % GLASS_ML) >= HALF_GLASS_ML;
@@ -65,6 +68,8 @@ export default function LogWater() {
     }
   };
 
+  const activeBlue = activeTheme === 'dark' ? '#60A5FA' : '#3B82F6';
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
@@ -73,7 +78,7 @@ export default function LogWater() {
           style={styles.backButton}
           activeOpacity={0.7}
         >
-          <ArrowLeft02Icon size={24} color={Colors.text} variant="stroke" />
+          <ArrowLeft02Icon size={24} color={colors.text} variant="stroke" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Add Water Intake</Text>
         <View style={{ width: 40 }} />
@@ -83,21 +88,19 @@ export default function LogWater() {
         <View style={styles.glassesContainer}>
           {Array.from({ length: fullGlasses }).map((_, i) => (
             <View key={`full-${i}`} style={[styles.glassWrapper, { transform: [{ scale: 1.2 }] }]}>
-              <MaterialCommunityIcons name="cup" size={64} color="#3B82F6" />
+              <MaterialCommunityIcons name="cup" size={64} color={activeBlue} />
             </View>
           ))}
 
           {hasHalfGlass && fullGlasses < totalGlassesAllowed && (
             <View key="half" style={[styles.glassWrapper, { transform: [{ scale: 1.2 }] }]}>
-               {/* Background Outline */}
                <View style={styles.glassIconLayer}>
-                  <MaterialCommunityIcons name="cup-outline" size={64} color="#3B82F6" />
+                  <MaterialCommunityIcons name="cup-outline" size={64} color={activeBlue} />
                </View>
                
-               {/* Filled Bottom Half */}
                <View style={styles.halfMask}>
                  <View style={styles.halfIconLayer}>
-                    <MaterialCommunityIcons name="cup" size={64} color="#3B82F6" />
+                    <MaterialCommunityIcons name="cup" size={64} color={activeBlue} />
                  </View>
                </View>
             </View>
@@ -105,19 +108,18 @@ export default function LogWater() {
 
           {Array.from({ length: emptyGlasses }).map((_, i) => (
             <View key={`empty-${i}`} style={[styles.glassWrapper, { transform: [{ scale: 0.9 }] }]}>
-              <MaterialCommunityIcons name="cup-outline" size={64} color={Colors.iconMuted} />
+              <MaterialCommunityIcons name="cup-outline" size={64} color={colors.textMuted} />
             </View>
           ))}
         </View>
 
-        {/* Info & Controls */}
         <View style={styles.controlsSection}>
           <TouchableOpacity 
             style={[styles.controlBtn, waterMl <= 0 && styles.controlBtnDisabled]} 
             onPress={handleDecrement}
             disabled={waterMl <= 0}
           >
-            <MinusSignIcon size={28} color={waterMl <= 0 ? Colors.iconMuted : Colors.text} variant="stroke" />
+            <MinusSignIcon size={28} color={waterMl <= 0 ? colors.textMuted : colors.text} variant="stroke" />
           </TouchableOpacity>
 
           <View style={styles.amountDisplayContainer}>
@@ -130,7 +132,7 @@ export default function LogWater() {
             onPress={handleIncrement}
             disabled={waterMl >= MAX_ML}
           >
-            <PlusSignIcon size={28} color={waterMl >= MAX_ML ? Colors.iconMuted : Colors.text} variant="stroke" />
+            <PlusSignIcon size={28} color={waterMl >= MAX_ML ? colors.textMuted : colors.text} variant="stroke" />
           </TouchableOpacity>
         </View>
         <Text style={styles.instructionText}>
@@ -139,7 +141,6 @@ export default function LogWater() {
 
       </View>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity 
           style={[
@@ -151,7 +152,7 @@ export default function LogWater() {
           disabled={isSubmitting || waterMl === 0}
         >
           {isSubmitting ? (
-            <ActivityIndicator color={Colors.background} />
+            <ActivityIndicator color={colors.background} />
           ) : (
             <Text style={styles.logButtonText}>Log Water</Text>
           )}
@@ -162,10 +163,10 @@ export default function LogWater() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -178,15 +179,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   content: {
     flex: 1,
@@ -225,7 +228,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 64, // Must perfectly match glassWrapper to align inner icon!
+    height: 64, 
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -235,22 +238,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     maxWidth: 280,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 32,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     marginBottom: 16,
   },
   controlBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   controlBtnDisabled: {
     backgroundColor: 'transparent',
@@ -264,17 +267,17 @@ const styles = StyleSheet.create({
   amountValue: {
     fontSize: 40,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
   },
   amountUnit: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginLeft: 4,
   },
   instructionText: {
     fontSize: 14,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
   },
   footer: {
@@ -283,7 +286,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   logButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 100,
     paddingVertical: 18,
     alignItems: 'center',
@@ -293,7 +296,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   logButtonText: {
-    color: Colors.background,
+    color: colors.background,
     fontSize: 18,
     fontWeight: '700',
   }

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     TextInput as RNTextInput,
     StyleSheet,
@@ -9,11 +9,11 @@ import {
     View,
     ViewStyle,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../context/ThemeContext';
 
 interface InputProps extends TextInputProps {
   label?: string;
-  icon?: any; // Change from keyof typeof Ionicons.glyphMap to accept Hmm Icons
+  icon?: any; 
   error?: string;
   isPassword?: boolean;
   containerStyle?: ViewStyle;
@@ -28,8 +28,11 @@ export const Input = ({
   containerStyle,
   ...props
 }: InputProps) => {
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.container}>
@@ -49,10 +52,10 @@ export const Input = ({
               size={20}
               color={
                 error
-                  ? Colors.error
+                  ? '#EF4444'
                   : isFocused
-                    ? Colors.primary
-                    : Colors.iconMuted
+                    ? colors.primary
+                    : colors.textMuted
               }
             />
           </View>
@@ -60,7 +63,7 @@ export const Input = ({
         
         <RNTextInput
           style={[styles.input, style]}
-          placeholderTextColor={Colors.iconMuted}
+          placeholderTextColor={colors.textMuted}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           secureTextEntry={isPassword && !showPassword}
@@ -75,7 +78,7 @@ export const Input = ({
             <Ionicons
               name={showPassword ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color={Colors.iconMuted}
+              color={colors.textMuted}
             />
           </TouchableOpacity>
         )}
@@ -86,13 +89,13 @@ export const Input = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     marginBottom: 16,
     width: '100%',
   },
   label: {
-    color: Colors.inputBorder,
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
@@ -101,26 +104,26 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Colors.surface,
+    borderColor: colors.border,
     height: 56,
     paddingHorizontal: 16,
   },
   inputContainerFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.background,
+    borderColor: colors.primary,
+    backgroundColor: colors.background,
   },
   inputContainerError: {
-    borderColor: Colors.error,
+    borderColor: '#EF4444',
   },
   icon: {
     marginRight: 10,
   },
   input: {
     flex: 1,
-    color: Colors.text,
+    color: colors.text,
     fontSize: 16,
     height: '100%',
   },
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   error: {
-    color: Colors.error,
+    color: '#EF4444',
     fontSize: 12,
     marginTop: 6,
     marginLeft: 4,

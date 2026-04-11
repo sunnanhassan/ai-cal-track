@@ -1,10 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { AppleIcon, DropletIcon, Dumbbell02Icon, QrCodeIcon, StarIcon } from 'hugeicons-react-native';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { useFoodStore } from '../../lib/food-store';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../context/ThemeContext';
 
 interface FABMenuModalProps {
   visible: boolean;
@@ -12,14 +12,16 @@ interface FABMenuModalProps {
 }
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48 - 16) / 2; // Screen width - horizontal padding - gap
+const CARD_WIDTH = (width - 48 - 16) / 2; 
 
 export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
   const router = useRouter();
+  const { colors, theme: activeTheme } = useTheme();
+  
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleNavigation = (route: string) => {
     onClose();
-    // Use setTimeout to allow the modal to close smoothly before navigating
     setTimeout(() => {
       router.push(route as any);
     }, 150);
@@ -89,6 +91,8 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
     }, 150);
   };
 
+  const isDark = activeTheme === 'dark';
+
   return (
     <Modal
       visible={visible}
@@ -105,46 +109,42 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
               <Text style={styles.title}>What would you like to log?</Text>
 
               <View style={styles.grid}>
-                {/* 1. Log Exercise */}
                 <TouchableOpacity 
                   style={styles.card} 
                   activeOpacity={0.7}
                   onPress={() => handleNavigation('/(tabs)/log-exercise')}
                 >
-                  <View style={[styles.iconBox, { backgroundColor: '#FEE2E2' }]}>
+                  <View style={[styles.iconBox, { backgroundColor: isDark ? '#EF444420' : '#FEE2E2' }]}>
                     <Dumbbell02Icon size={28} color="#EF4444" variant="stroke" />
                   </View>
                   <Text style={styles.cardTitle}>Log Exercise</Text>
                   <Text style={styles.cardSubtitle}>Activities & workouts</Text>
                 </TouchableOpacity>
 
-                {/* 2. Add Drink Water */}
                 <TouchableOpacity 
                   style={styles.card} 
                   activeOpacity={0.7}
                   onPress={() => handleNavigation('/(tabs)/log-water')}
                 >
-                  <View style={[styles.iconBox, { backgroundColor: '#DBEAFE' }]}>
+                  <View style={[styles.iconBox, { backgroundColor: isDark ? '#3B82F620' : '#DBEAFE' }]}>
                     <DropletIcon size={28} color="#3B82F6" variant="stroke" />
                   </View>
                   <Text style={styles.cardTitle}>Drink Water</Text>
                   <Text style={styles.cardSubtitle}>Hydration tracking</Text>
                 </TouchableOpacity>
 
-                {/* 3. Food Database */}
                 <TouchableOpacity 
                   style={styles.card} 
                   activeOpacity={0.7}
                   onPress={() => handleNavigation('/(tabs)/log-food')}
                 >
-                  <View style={[styles.iconBox, { backgroundColor: '#DCFCE7' }]}>
+                  <View style={[styles.iconBox, { backgroundColor: isDark ? '#22C55E20' : '#DCFCE7' }]}>
                     <AppleIcon size={28} color="#22C55E" variant="stroke" />
                   </View>
                   <Text style={styles.cardTitle}>Food Database</Text>
                   <Text style={styles.cardSubtitle}>Search thousands of meals</Text>
                 </TouchableOpacity>
 
-                {/* 4. Scan Food (Premium) */}
                 <TouchableOpacity 
                   style={styles.card} 
                   activeOpacity={0.7}
@@ -153,7 +153,7 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
                   <View style={styles.premiumBadge}>
                     <StarIcon size={12} color="#FFFFFF" variant="stroke" />
                   </View>
-                  <View style={[styles.iconBox, { backgroundColor: '#F3E8FF' }]}>
+                  <View style={[styles.iconBox, { backgroundColor: isDark ? '#A855F720' : '#F3E8FF' }]}>
                     <QrCodeIcon size={28} color="#A855F7" variant="stroke" />
                   </View>
                   <Text style={styles.cardTitle}>Scan Food</Text>
@@ -169,14 +169,14 @@ export default function FABMenuModal({ visible, onClose }: FABMenuModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
@@ -191,14 +191,14 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 40,
     height: 5,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
     borderRadius: 3,
     marginBottom: 24,
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 24,
     alignSelf: 'flex-start',
   },
@@ -211,16 +211,18 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     padding: 20,
     borderRadius: 24,
     alignItems: 'flex-start',
-    shadowColor: Colors.text,
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
     position: 'relative',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   iconBox: {
     width: 56,
@@ -233,12 +235,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
     lineHeight: 16,
   },
