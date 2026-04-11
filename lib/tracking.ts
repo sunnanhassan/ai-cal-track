@@ -162,3 +162,34 @@ export const updateUserWeight = async (userId: string, weightKg: number) => {
     return false;
   }
 };
+
+export const saveBentoInsights = async (userId: string, insights: any[]) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      bentoInsights: {
+        data: insights,
+        lastGeneratedAt: new Date().toISOString()
+      }
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to save bento insights', error);
+    return false;
+  }
+};
+
+export const fetchCachedBentoInsights = async (userId: string) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      return data.bentoInsights || null;
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch cached bento insights', error);
+    return null;
+  }
+};

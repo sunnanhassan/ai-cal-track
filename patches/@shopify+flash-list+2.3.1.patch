@@ -1,0 +1,22 @@
+diff --git a/node_modules/@shopify/flash-list/dist/native/config/versionCheck.android.js b/node_modules/@shopify/flash-list/dist/native/config/versionCheck.android.js
+new file mode 100644
+index 0000000..2dc9e26
+--- /dev/null
++++ b/node_modules/@shopify/flash-list/dist/native/config/versionCheck.android.js
+@@ -0,0 +1,5 @@
++var _a;
++import { Platform } from "react-native";
++const rnVersion = (_a = Platform.constants) === null || _a === void 0 ? void 0 : _a.reactNativeVersion;
++export const isRN083OrAbove = () => rnVersion && (rnVersion.major > 0 || rnVersion.minor >= 83);
++//# sourceMappingURL=versionCheck.js.map
+diff --git a/node_modules/@shopify/flash-list/dist/native/config/versionCheck.ios.js b/node_modules/@shopify/flash-list/dist/native/config/versionCheck.ios.js
+new file mode 100644
+index 0000000..2dc9e26
+--- /dev/null
++++ b/node_modules/@shopify/flash-list/dist/native/config/versionCheck.ios.js
+@@ -0,0 +1,5 @@
++var _a;
++import { Platform } from "react-native";
++const rnVersion = (_a = Platform.constants) === null || _a === void 0 ? void 0 : _a.reactNativeVersion;
++export const isRN083OrAbove = () => rnVersion && (rnVersion.major > 0 || rnVersion.minor >= 83);
++//# sourceMappingURL=versionCheck.js.map

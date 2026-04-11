@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, Image, ActivityIndicator, ScrollView, Modal, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, Image, ActivityIndicator, ScrollView, Modal, TouchableOpacity, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BarChart, LineChart } from "react-native-chart-kit";
 import { Colors } from "../../constants/Colors";
 import { useUser } from "@clerk/clerk-expo";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
-import { fetchDailyProgress } from "../../lib/tracking";
+import { fetchDailyProgress, fetchCachedBentoInsights, saveBentoInsights } from "../../lib/tracking";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { generateBentoInsights, BentoInsight } from "../../lib/gemini";
 
 export default function Analytics() {
   const { user } = useUser();
@@ -17,6 +20,9 @@ export default function Analytics() {
 
   // We'll store a boolean for each day of the current week (Sun - Sat)
   const [weekStreak, setWeekStreak] = useState<boolean[]>(Array(7).fill(false));
+  const [weekData, setWeekData] = useState<any[]>(Array(7).fill({ totalCalories: 0 }));
+  const [insights, setInsights] = useState<BentoInsight[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   useEffect(() => {
@@ -27,10 +33,12 @@ export default function Analytics() {
         // 1. Fetch User Weight
         const userRef = doc(db, 'users', user.id);
         const userSnap = await getDoc(userRef);
+        let currentWeight = '--';
         if (userSnap.exists()) {
           const data = userSnap.data();
           if (data.weight) {
-            setWeight(String(data.weight));
+            currentWeight = String(data.weight);
+            setWeight(currentWeight);
           }
         }
 
@@ -56,11 +64,52 @@ export default function Analytics() {
         });
 
         setWeekStreak(streakData);
+        setWeekData(weekResults);
+
+        // -- END MAIN LOADING --
+        // This ensures charts and basic info show up immediately
+        setLoading(false);
+
+        // 3. Handle AI Insights (Non-blocking)
+        loadAIInsights(user.id, weekResults, currentWeight);
 
       } catch (err) {
         console.error("Error fetching analytics data:", err);
-      } finally {
         setLoading(false);
+      }
+    };
+
+    const loadAIInsights = async (userId: string, weekResults: any[], currentWeight: string) => {
+      try {
+        setInsightsLoading(true);
+        
+        // 1. Check Cache
+        const cached = await fetchCachedBentoInsights(userId);
+        
+        if (cached && cached.lastGeneratedAt) {
+          const lastGen = new Date(cached.lastGeneratedAt).getTime();
+          const now = Date.now();
+          const hoursPassed = (now - lastGen) / (1000 * 60 * 60);
+
+          if (hoursPassed < 6) {
+            console.log(`Using cached insights (${hoursPassed.toFixed(1)}h old)`);
+            setInsights(cached.data);
+            setInsightsLoading(false);
+            return;
+          }
+        }
+
+        // 2. Refresh Cache (If expired or missing)
+        console.log("Generating fresh AI insights...");
+        const aiInsights = await generateBentoInsights(weekResults, currentWeight);
+        if (aiInsights && aiInsights.length > 0) {
+          setInsights(aiInsights);
+          await saveBentoInsights(userId, aiInsights);
+        }
+      } catch (err) {
+        console.error("Error loading AI insights:", err);
+      } finally {
+        setInsightsLoading(false);
       }
     };
 
@@ -68,10 +117,15 @@ export default function Analytics() {
   }, [user]);
 
   const currentStreakCount = weekStreak.filter(Boolean).length;
+  
+  // Calculate Weekly Energy Totals
+  const totalWeeklyConsumed = weekData.reduce((sum, d) => sum + (d.totalCalories || 0), 0);
+  const totalWeeklyBurned = weekData.reduce((sum, d) => sum + (d.totalBurnedCalories || 0), 0);
+  const netEnergy = totalWeeklyConsumed - totalWeeklyBurned;
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Progress</Text>
           <Text style={styles.subtitle}>View your trends and history.</Text>
@@ -121,6 +175,180 @@ export default function Analytics() {
                 <Text style={styles.weightValue}>{weight} <Text style={styles.weightUnit}>kg</Text></Text>
               </TouchableOpacity>
 
+            </View>
+
+            {/* AI Insights Bento Grid */}
+            <View style={styles.bentoSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>AI Health Coaching</Text>
+                {insightsLoading && <ActivityIndicator size="small" color={Colors.primary} />}
+              </View>
+
+              <View style={styles.bentoGrid}>
+                {insightsLoading ? (
+                  // Skeleton placeholders
+                  [1, 2, 3, 4].map((i) => (
+                    <View key={i} style={[styles.bentoItem, styles.skeletonItem, { minHeight: i % 2 === 0 ? 160 : 120 }]} />
+                  ))
+                ) : (
+                  insights.map((insight, idx) => (
+                    <View 
+                      key={idx} 
+                      style={[
+                        styles.bentoItem, 
+                        { 
+                          backgroundColor: Colors.surface + '80', 
+                          minHeight: idx === 0 || idx === 3 ? 190 : 155,
+                          borderColor: getInsightColor(insight.type),
+                          borderLeftWidth: 4,
+                          shadowColor: getInsightColor(insight.type),
+                          shadowOpacity: 0.1,
+                          shadowRadius: 10,
+                          elevation: 2,
+                        }
+                      ]}
+                    >
+                      <View>
+                        <View style={styles.bentoHeader}>
+                          <Ionicons name={insight.icon as any} size={20} color={getInsightColor(insight.type)} />
+                          <Text style={styles.bentoTitle} numberOfLines={1}>{insight.title}</Text>
+                        </View>
+                        
+                        <Text style={[styles.bentoValue, { color: getInsightColor(insight.type) }]}>{insight.value}</Text>
+                      </View>
+                      
+                      <Text style={styles.bentoInsightText}>{insight.insight}</Text>
+                    </View>
+                  ))
+                )}
+              </View>
+            </View>
+
+            {/* Weekly Energy Card */}
+            <View style={[styles.card, { marginTop: 24, padding: 20 }]}>
+              <Text style={styles.cardTitle}>Weekly Energy Balance</Text>
+              
+              <View style={styles.energyStatsRow}>
+                 <View style={styles.energyStat}>
+                    <Text style={styles.energyValue}>{totalWeeklyBurned.toLocaleString()}</Text>
+                    <Text style={styles.energyLabel}>Energy Burned</Text>
+                 </View>
+                 <View style={styles.energyDivider} />
+                 <View style={styles.energyStat}>
+                    <Text style={styles.energyValue}>{totalWeeklyConsumed.toLocaleString()}</Text>
+                    <Text style={styles.energyLabel}>Energy Consumed</Text>
+                 </View>
+                 <View style={styles.energyDivider} />
+                 <View style={styles.energyStat}>
+                    <Text style={[styles.energyValue, { color: netEnergy > 0 ? '#EF4444' : Colors.primary }]}>
+                      {netEnergy > 0 ? '+' : ''}{netEnergy.toLocaleString()}
+                    </Text>
+                    <Text style={styles.energyLabel}>Net Energy</Text>
+                 </View>
+              </View>
+
+              <View style={{ marginTop: 24 }}>
+                <BarChart
+                  data={{
+                    labels: daysOfWeek,
+                    datasets: [
+                      {
+                        data: weekData.map((d) => d.totalCalories || 0),
+                        color: (opacity = 1) => `rgba(41, 143, 80, ${opacity})`, // Primary (Consumed)
+                      },
+                      {
+                        data: weekData.map((d) => d.totalBurnedCalories || 0),
+                        color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`, // Red (Burned)
+                      }
+                    ],
+                    legend: ["Consumed", "Burned"]
+                  }}
+                  width={Dimensions.get("window").width - 80}
+                  height={220}
+                  yAxisLabel=""
+                  yAxisSuffix=""
+                  chartConfig={{
+                    backgroundColor: Colors.surface,
+                    backgroundGradientFrom: Colors.surface,
+                    backgroundGradientTo: Colors.surface,
+                    decimalPlaces: 0,
+                    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                    labelColor: (opacity = 1) => Colors.textMuted,
+                    propsForBackgroundLines: {
+                      stroke: Colors.border,
+                      strokeDasharray: '0',
+                    }
+                  }}
+                  style={{
+                    marginVertical: 8,
+                    borderRadius: 16,
+                  }}
+                  fromZero={true}
+                  flatColor={true}
+                  withInnerLines={true}
+                  showBarTops={false}
+                />
+              </View>
+
+              {/* Legend */}
+              <View style={styles.legendContainer}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
+                  <Text style={styles.legendText}>Consumed</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                  <Text style={styles.legendText}>Burned</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Water Consumption Chart Card */}
+            <View style={[styles.card, { marginTop: 16, padding: 20, marginBottom: 40 }]}>
+              <View style={styles.chartHeader}>
+                <Text style={styles.cardTitle}>Water Consumption</Text>
+                <Text style={styles.chartValue}>{weekData.reduce((sum, d) => sum + (d.totalWaterMl || 0), 0).toLocaleString()} <Text style={styles.unitSmall}>ml</Text></Text>
+              </View>
+              
+              <LineChart
+                data={{
+                  labels: daysOfWeek,
+                  datasets: [
+                    {
+                      data: weekData.map((d) => d.totalWaterMl || 0),
+                      color: (opacity = 1) => `rgba(14, 165, 233, ${opacity})`, // Blue for water
+                      strokeWidth: 3
+                    }
+                  ],
+                }}
+                width={Dimensions.get("window").width - 80}
+                height={220}
+                bezier
+                chartConfig={{
+                  backgroundColor: Colors.surface,
+                  backgroundGradientFrom: Colors.surface,
+                  backgroundGradientTo: Colors.surface,
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(14, 165, 233, ${opacity})`,
+                  labelColor: (opacity = 1) => Colors.textMuted,
+                  propsForDots: {
+                    r: "4",
+                    strokeWidth: "2",
+                    stroke: "#0EA5E9"
+                  },
+                  propsForBackgroundLines: {
+                    stroke: Colors.border,
+                    strokeDasharray: '0',
+                    strokeWidth: 1,
+                  }
+                }}
+                style={{
+                  marginVertical: 16,
+                  borderRadius: 16,
+                  alignSelf: 'center',
+                }}
+                fromZero={true}
+              />
             </View>
           </View>
         )}
@@ -372,5 +600,136 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 8,
     backgroundColor: Colors.border,
+  },
+  energyStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  energyStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  energyDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: Colors.border,
+  },
+  energyValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.text,
+  },
+  energyLabel: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  chartValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0EA5E9',
+  },
+  unitSmall: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontWeight: 'normal',
+  },
+  bentoSection: {
+    marginTop: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  bentoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  bentoItem: {
+    width: '48%', // Roughly 2 columns
+    borderRadius: 24,
+    padding: 18,
+    justifyContent: 'space-between',
+    borderWidth: 0,
+    marginBottom: 4,
+  },
+  skeletonItem: {
+    backgroundColor: Colors.surface,
+    opacity: 0.5,
+  },
+  bentoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bentoTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    marginLeft: 6,
+    flex: 1,
+  },
+  bentoValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: 8,
+    marginBottom: 8,
+    lineHeight: 28,
+  },
+  bentoInsightText: {
+    fontSize: 12,
+    color: Colors.text,
+    lineHeight: 18,
+    opacity: 0.9,
+    flexShrink: 1,
   }
 });
+
+function getInsightColor(type: string) {
+  switch (type) {
+    case 'success': return '#10B981';
+    case 'warning': return '#F59E0B';
+    case 'error': return '#EF4444';
+    case 'info': return '#3B82F6';
+    default: return Colors.primary;
+  }
+}

@@ -231,3 +231,74 @@ export async function analyzeFoodImage(base64Image: string): Promise<FoodNutriti
   }
 }
 
+export interface BentoInsight {
+  title: string;
+  value: string;
+  insight: string;
+  type: 'success' | 'warning' | 'info' | 'error';
+  icon: string; // Ionicons name
+}
+
+export async function generateBentoInsights(weeklyData: any[], weight: string): Promise<BentoInsight[]> {
+  const prompt = `
+    You are an expert health and performance AI coach with a supportive, professional, and sophisticated tone. 
+    Analyze the following weekly health data and generate exactly 4-6 concise, highly impactful insights or status cards for a "Bento Grid" dashboard.
+    
+    Weekly Data (Last 7 Days):
+    ${JSON.stringify(weeklyData)}
+    
+    Current Weight: ${weight} kg
+    
+    IMPORTANT GUIDELINES:
+    1. Tone: Professional, encouraging, and data-driven. Avoid being overly critical.
+    2. Missing Data: If logs are sparse (e.g., many zeros), do NOT just say "Incomplete". Use titles like "Analysis Pending" or "Coach Insight" and values like "Logging Goal".
+    3. Advice: Provide actionable, sophisticated advice. Instead of "Drink water", say "Aim for consistent hydration to optimize metabolic rate."
+    4. Types: Use "success" for good trends, "warning" for alerts, "info" for general tips/reminders, and "error" only for critical health gaps.
+
+    For each insight, provide:
+    1. A short title (e.g., "Metabolic Trend", "Hydration Status").
+    2. A brief value or status (e.g., "Optimal", "Refining...", "+200 kcal").
+    3. A single punchy, professional sentence of insight or advice.
+    4. A type: "success", "warning", "info", or "error".
+    5. A relevant Ionicons icon name (e.g., "analytics-outline", "leaf-outline", "water-outline").
+
+    Respond strictly with a JSON array of objects, with no markdown formatting or extra text.
+    Example Format:
+    [
+      {
+        "title": "Water Intake",
+        "value": "75%",
+        "insight": "You're slightly below your hydration goal today. Drink 2 more glasses!",
+        "type": "info",
+        "icon": "water-outline"
+      }
+    ]
+  `;
+
+  try {
+    const isLocal = process.env.NODE_ENV === 'development';
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 
+        (Platform.OS === 'android' ? 'http://10.0.2.2:8081' : 'http://localhost:8081');
+
+    const response = await fetch(`${baseUrl}/api/gemini`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+    const json = await response.json();
+    const jsonString = json.text;
+    if (!jsonString) throw new Error('Empty response from proxy');
+
+    const cleanJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJsonString);
+
+  } catch (error: any) {
+    console.error('Error generating bento insights: ', error.message);
+    // Return empty array on error to prevent UI crash
+    return [];
+  }
+}
+
