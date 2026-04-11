@@ -6,9 +6,11 @@ import { useUser } from "@clerk/clerk-expo";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { fetchDailyProgress } from "../../lib/tracking";
+import { useRouter } from "expo-router";
 
 export default function Analytics() {
   const { user } = useUser();
+  const router = useRouter();
   const [weight, setWeight] = useState<string>('--');
   const [loading, setLoading] = useState(true);
   const [isStreakModalVisible, setIsStreakModalVisible] = useState(false);
@@ -110,10 +112,14 @@ export default function Analytics() {
               </TouchableOpacity>
 
               {/* My Weight Card */}
-              <View style={[styles.card, styles.weightCard]}>
+              <TouchableOpacity
+                style={[styles.card, styles.weightCard]}
+                onPress={() => router.push('/update-weight')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.cardTitle}>My Weight</Text>
                 <Text style={styles.weightValue}>{weight} <Text style={styles.weightUnit}>kg</Text></Text>
-              </View>
+              </TouchableOpacity>
 
             </View>
           </View>

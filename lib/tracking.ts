@@ -135,3 +135,30 @@ export const addDailyLog = async (userId: string, date: Date, log: Omit<DailyLog
     return false;
   }
 };
+
+export const updateUserWeight = async (userId: string, weightKg: number) => {
+  try {
+    const dateStr = formatDateString(new Date());
+
+    // 1. Update user collection
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      weight: weightKg,
+      updatedAt: serverTimestamp()
+    });
+
+    // 2. Add to weight logs subcollection for graphing later
+    const logId = Date.now().toString();
+    const weightLogRef = doc(db, 'users', userId, 'weight_logs', logId);
+    await setDoc(weightLogRef, {
+      weight: weightKg,
+      dateStr: dateStr,
+      timestamp: serverTimestamp()
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Failed to update user weight', error);
+    return false;
+  }
+};
