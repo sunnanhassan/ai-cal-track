@@ -16,6 +16,7 @@ import { Input } from '../../components/ui/Input';
 import { SocialButton } from '../../components/ui/SocialButton';
 import { Colors } from '../../constants/Colors';
 import { saveUserToFirestore } from '../../lib/auth-store';
+import { presentPaywallIfNeeded } from '../../lib/revenuecat';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -80,6 +81,7 @@ export default function SignUpScreen() {
         });
 
         await setActive({ session: completeSignUp.createdSessionId });
+        await presentPaywallIfNeeded();
         router.replace('/');
       } else {
         console.error(JSON.stringify(completeSignUp, null, 2));
@@ -111,6 +113,7 @@ export default function SignUpScreen() {
           });
         }
         
+        await presentPaywallIfNeeded();
         router.replace('/');
       }
     } catch (err) {

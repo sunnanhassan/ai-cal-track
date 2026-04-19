@@ -1,5 +1,5 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
@@ -7,14 +7,26 @@ import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
 import { useTheme } from "../../context/ThemeContext";
+import { checkSubscriptionStatus, presentCustomerCenter, showPaywall } from "../../lib/revenuecat";
+import { useMenuStore } from "../../lib/menu-store";
 
 export default function Profile() {
   const { user } = useUser();
   const { signOut } = useAuth();
   const router = useRouter();
   const { colors } = useTheme();
+  const toggleMenu = useMenuStore((state) => state.toggleMenu);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [isPro, setIsPro] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchStatus = async () => {
+      const status = await checkSubscriptionStatus();
+      setIsPro(status);
+    };
+    fetchStatus();
+  }, [user]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -57,7 +69,15 @@ export default function Profile() {
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={toggleMenu}
+            activeOpacity={0.7}
+            style={styles.menuButton}
+          >
+            <Feather name="menu" size={24} color={colors.text} />
+          </TouchableOpacity>
           <Text style={styles.title}>Profile</Text>
+          <View style={{ width: 40 }} />
         </View>
 
         {/* User Info Card */}
@@ -69,24 +89,35 @@ export default function Profile() {
             transition={500}
           />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.fullName || "User Name"}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.userName}>{user?.fullName || "User Name"}</Text>
+              {isPro && (
+                <View style={styles.premiumBadge}>
+                  <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.userEmail}>{user?.primaryEmailAddress?.emailAddress || "email@example.com"}</Text>
           </View>
         </View>
 
-        {/* Free Trial Banner */}
-        <TouchableOpacity style={styles.trialCard} activeOpacity={0.9}>
-          <View style={styles.trialLeft}>
-            <View style={styles.trialIconContainer}>
-              <Ionicons name="sparkles" size={24} color={colors.primary} />
+        {/* Free Trial Banner - Only show if not Premium */}
+        {!isPro && (
+          <TouchableOpacity style={styles.trialCard} activeOpacity={0.9} onPress={() => showPaywall().then(res => {
+            if (res) checkSubscriptionStatus().then(setIsPro);
+          })}>
+            <View style={styles.trialLeft}>
+              <View style={styles.trialIconContainer}>
+                <Ionicons name="sparkles" size={24} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.trialTitle}>Start Free Trial</Text>
+                <Text style={styles.trialSubtitle}>Start 7 days Free trial</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.trialTitle}>Start Free Trial</Text>
-              <Text style={styles.trialSubtitle}>Start 7 days Free trial</Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-        </TouchableOpacity>
+            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        )}
 
         {/* Account Section */}
         <Text style={styles.sectionHeader}>Account</Text>
@@ -97,7 +128,19 @@ export default function Profile() {
           <View style={styles.divider} />
           {renderOption("settings-outline", "Preferences", colors.text, () => router.push('/preferences'))}
           <View style={styles.divider} />
-          {renderOption("star-outline", "Upgrade to Premium Features", colors.primary)}
+          {renderOption("color-palette-outline", "View Stitch Design Prototype", colors.primary, () => router.push('/vitality-demo'))}
+          <View style={styles.divider} />
+          {isPro ? (
+            renderOption("card-outline", "Manage Subscription", colors.primary, () => {
+              presentCustomerCenter();
+            })
+          ) : (
+            renderOption("star-outline", "Upgrade to Premium Features", colors.primary, () => {
+              showPaywall().then(res => {
+                if (res) checkSubscriptionStatus().then(setIsPro);
+              });
+            })
+          )}
         </View>
 
         {/* Support Section */}
@@ -168,10 +211,27 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginLeft: 16,
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   userName: {
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
+  },
+  premiumBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  premiumBadgeText: {
+    color: colors.surface,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   userEmail: {
     fontSize: 14,

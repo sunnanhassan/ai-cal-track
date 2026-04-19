@@ -1,143 +1,56 @@
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Colors } from '../../constants/Colors';
 import { useOnboarding } from './_layout';
+import { SelectionCard, OnboardingScreenWrapper } from '../../components/onboarding/OnboardingShared';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Vitality } from '../../constants/Colors';
 
 export default function Step4() {
-  const { data, updateData } = useOnboarding();
   const router = useRouter();
+  const { data, updateData } = useOnboarding();
 
-  const [day, setDay] = useState('');
-  const [month, setMonth] = useState('');
-  const [year, setYear] = useState('');
-
-  const [error, setError] = useState('');
-
-  const handleNext = () => {
-    const d = parseInt(day, 10);
-    const m = parseInt(month, 10);
-    const y = parseInt(year, 10);
-
-    if (!d || !m || !y || d > 31 || m > 12 || y < 1900 || y > new Date().getFullYear()) {
-      setError('Please enter a valid date.');
-      return;
-    }
-
-    // Format as YYYY-MM-DD
-    const paddedMonth = m.toString().padStart(2, '0');
-    const paddedDay = d.toString().padStart(2, '0');
-    const birthDateStr = `${y}-${paddedMonth}-${paddedDay}`;
-
-    updateData({ birthDate: birthDateStr });
-    setError('');
-    router.push('/(onboarding)/step-5' as any);
+  const handleSelect = (gender: 'male' | 'female' | 'other') => {
+    updateData({ gender });
   };
-
-  const handleBack = () => {
-    router.back();
-  };
-
-  const isComplete = day.length > 0 && month.length > 0 && year.length === 4;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>When were you born?</Text>
-        <Text style={styles.subtitle}>Age plays a big role in calorie calculations.</Text>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <View style={styles.row}>
-          <View style={styles.inputWrapper}>
-            <Input
-              label="Day"
-              placeholder="DD"
-              keyboardType="number-pad"
-              maxLength={2}
-              value={day}
-              onChangeText={setDay}
-            />
-          </View>
-          <View style={styles.inputWrapper}>
-            <Input
-              label="Month"
-              placeholder="MM"
-              keyboardType="number-pad"
-              maxLength={2}
-              value={month}
-              onChangeText={setMonth}
-            />
-          </View>
-          <View style={[styles.inputWrapper, { flex: 1.5 }]}>
-            <Input
-              label="Year"
-              placeholder="YYYY"
-              keyboardType="number-pad"
-              maxLength={4}
-              value={year}
-              onChangeText={setYear}
-            />
-          </View>
-        </View>
+    <OnboardingScreenWrapper
+      title="What's your gender?"
+      subtitle="Used to ensure the highest accuracy for your metabolic calculations."
+      onContinue={() => router.push('/(onboarding)/step-5')}
+      continueDisabled={!data.gender}
+    >
+      <View style={styles.listContainer}>
+        <SelectionCard
+          title="Male"
+          selected={data.gender === 'male'}
+          onPress={() => handleSelect('male')}
+          icon={<MaterialCommunityIcons name="gender-male" size={28} color={data.gender === 'male' ? Vitality.primary : Vitality.textMuted} />}
+        />
+        
+        <SelectionCard
+          title="Female"
+          selected={data.gender === 'female'}
+          onPress={() => handleSelect('female')}
+          icon={<MaterialCommunityIcons name="gender-female" size={28} color={data.gender === 'female' ? Vitality.primary : Vitality.textMuted} />}
+        />
+        
+        <SelectionCard
+          title="Other"
+          selected={data.gender === 'other'}
+          onPress={() => handleSelect('other')}
+          icon={<MaterialCommunityIcons name="gender-non-binary" size={28} color={data.gender === 'other' ? Vitality.primary : Vitality.textMuted} />}
+        />
       </View>
-
-      <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          <Button title="Back" onPress={handleBack} variant="outline" style={styles.halfBtn} />
-          <Button title="Continue" onPress={handleNext} disabled={!isComplete} style={styles.halfBtn} />
-        </View>
-      </View>
-    </View>
+    </OnboardingScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.textMuted,
-    marginBottom: 32,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  inputWrapper: {
-    flex: 1,
-  },
-  error: {
-    color: Colors.error,
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: Colors.errorBackground,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.errorBorder,
-  },
-  footer: {
-    paddingBottom: 24,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  halfBtn: {
-    flex: 1,
+  listContainer: {
+    flexDirection: 'column',
+    gap: 0,
+    marginTop: 16,
   },
 });
