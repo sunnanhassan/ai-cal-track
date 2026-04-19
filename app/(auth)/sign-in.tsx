@@ -16,6 +16,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { SocialButton } from '../../components/ui/SocialButton';
 import { Colors } from '../../constants/Colors';
+import { presentPaywallIfNeeded } from '../../lib/revenuecat';
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -42,6 +43,7 @@ export default function SignInScreen() {
 
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
+        await presentPaywallIfNeeded();
         router.replace('/');
       } else if (signInAttempt.status === 'needs_second_factor') {
         await signIn.prepareSecondFactor({ strategy: 'email_code' });
@@ -71,6 +73,7 @@ export default function SignInScreen() {
 
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
+        await presentPaywallIfNeeded();
         router.replace('/');
       } else {
         setError('Failed to verify code.');
@@ -89,6 +92,7 @@ export default function SignInScreen() {
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
         // NOTE: Google OAuth user data saving to Firestore logic will be added via webhook or layout logic
+        await presentPaywallIfNeeded();
         router.replace('/');
       }
     } catch (err) {

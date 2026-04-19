@@ -28,4 +28,20 @@ export const dark = {
   inputBorder: '#334155',
 };
 
+export const Vitality = {
+  primary: '#59DE9B',
+  primaryContainer: '#00A86B',
+  secondary: '#C5C4DE',
+  tertiary: '#FBBC00',
+  background: '#131318',
+  surface: '#1B1B20',
+  surfaceCard: '#35343A',
+  text: '#E4E1E9',
+  textMuted: '#BCCABE',
+  error: '#FFB4AB',
+  outline: '#3D4A41',
+  glass: 'rgba(53, 52, 58, 0.6)',
+  glassBorder: 'rgba(61, 74, 65, 0.15)',
+};
+
 export const Colors = dark; // Default for backward compatibility

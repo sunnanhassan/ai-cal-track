@@ -1,81 +1,50 @@
-// Wait, we should use 'expo-router', not 'react-router-native'
-import { useRouter as useExpoRouter } from 'expo-router';
-import { UserIcon } from 'hugeicons-react-native';
-import { StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../components/ui/Button';
-import { OptionCard } from '../../components/ui/OptionCard';
-import { Colors } from '../../constants/Colors';
+import React from 'react';
+import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useOnboarding } from './_layout';
+import { SelectionCard, OnboardingScreenWrapper } from '../../components/onboarding/OnboardingShared';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Vitality } from '../../constants/Colors';
 
 export default function Step1() {
+  const router = useRouter();
   const { data, updateData } = useOnboarding();
-  const router = useExpoRouter();
 
-  const handleNext = () => {
-    if (data.gender) {
-      router.push('/(onboarding)/step-2' as any);
-    }
+  const handleSelect = (goal: 'lose' | 'maintain' | 'gain') => {
+    updateData({ goal });
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>What's your gender?</Text>
-        <Text style={styles.subtitle}>This helps us calculate your specific calorie needs.</Text>
-
-        <View style={styles.options}>
-          <OptionCard
-            label="Male"
-            icon={UserIcon}
-            isSelected={data.gender === 'Male'}
-            onPress={() => updateData({ gender: 'Male' })}
-          />
-          <OptionCard
-            label="Female"
-            icon={UserIcon}
-            isSelected={data.gender === 'Female'}
-            onPress={() => updateData({ gender: 'Female' })}
-          />
-          <OptionCard
-            label="Other"
-            icon={UserIcon}
-            isSelected={data.gender === 'Other'}
-            onPress={() => updateData({ gender: 'Other' })}
-          />
-        </View>
+    <OnboardingScreenWrapper
+      title="What's your goal?"
+      onContinue={() => router.push('/(onboarding)/step-2')}
+      continueDisabled={!data.goal}
+    >
+      <View>
+        <SelectionCard
+          title="Lose weight"
+          subtitle="Burn fat, feel lighter"
+          selected={data.goal === 'lose'}
+          onPress={() => handleSelect('lose')}
+          icon={<MaterialCommunityIcons name="fire" size={32} color={data.goal === 'lose' ? Vitality.primary : Vitality.textMuted} />}
+        />
+        
+        <SelectionCard
+          title="Maintain weight"
+          subtitle="Stay balanced and healthy"
+          selected={data.goal === 'maintain'}
+          onPress={() => handleSelect('maintain')}
+          icon={<MaterialCommunityIcons name="heart-pulse" size={32} color={data.goal === 'maintain' ? Vitality.primary : Vitality.textMuted} />}
+        />
+        
+        <SelectionCard
+          title="Gain weight"
+          subtitle="Build muscle, add mass"
+          selected={data.goal === 'gain'}
+          onPress={() => handleSelect('gain')}
+          icon={<MaterialCommunityIcons name="arm-flex" size={32} color={data.goal === 'gain' ? Vitality.primary : Vitality.textMuted} />}
+        />
       </View>
-
-      <View style={styles.footer}>
-        <Button title="Continue" onPress={handleNext} disabled={!data.gender} />
-      </View>
-    </View>
+    </OnboardingScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.textMuted,
-    marginBottom: 32,
-  },
-  options: {
-    gap: 16,
-  },
-  footer: {
-    paddingBottom: 24,
-  },
-});

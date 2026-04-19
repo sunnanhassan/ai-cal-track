@@ -1,97 +1,100 @@
+import React, { useState } from 'react';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Analytics01Icon, ArrowDownRight01Icon, ArrowUpRight01Icon } from 'hugeicons-react-native';
-import { StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../components/ui/Button';
-import { OptionCard } from '../../components/ui/OptionCard';
-import { Colors } from '../../constants/Colors';
 import { useOnboarding } from './_layout';
+import { OnboardingScreenWrapper } from '../../components/onboarding/OnboardingShared';
+import { Vitality } from '../../constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function Step2() {
-  const { data, updateData } = useOnboarding();
   const router = useRouter();
+  const { data, updateData } = useOnboarding();
+  const [weightValue, setWeightValue] = useState(data.weight?.toString() || '');
 
-  const handleNext = () => {
-    if (data.goal) {
-      router.push('/(onboarding)/step-3' as any);
+  const handleContinue = () => {
+    const numericWeight = parseFloat(weightValue);
+    if (!isNaN(numericWeight)) {
+      updateData({ weight: numericWeight });
+      router.push('/(onboarding)/step-3');
     }
   };
 
-  const handleBack = () => {
-    router.back();
-  };
-
   return (
-    <View style={styles.container}>
+    <OnboardingScreenWrapper
+      title="What's your current weight?"
+      onContinue={handleContinue}
+      continueDisabled={!weightValue || isNaN(parseFloat(weightValue))}
+    >
       <View style={styles.content}>
-        <Text style={styles.title}>What's your primary goal?</Text>
-        <Text style={styles.subtitle}>Select the path that best matches your fitness journey.</Text>
-
-        <View style={styles.options}>
-          <OptionCard
-            label="Gain Weight"
-            subLabel="Build muscle and track calorie surplus."
-            icon={ArrowUpRight01Icon}
-            isSelected={data.goal === 'Gain Weight'}
-            onPress={() => updateData({ goal: 'Gain Weight' })}
-          />
-          <OptionCard
-            label="Lose Weight"
-            subLabel="Burn fat and manage a calorie deficit."
-            icon={ArrowDownRight01Icon}
-            isSelected={data.goal === 'Lose Weight'}
-            onPress={() => updateData({ goal: 'Lose Weight' })}
-          />
-          <OptionCard
-            label="Maintain Weight"
-            subLabel="Stay healthy and keep your current shape."
-            icon={Analytics01Icon}
-            isSelected={data.goal === 'Maintain Weight'}
-            onPress={() => updateData({ goal: 'Maintain Weight' })}
-          />
+        
+        {/* Professional Value Display Input */}
+        <View style={styles.valueDisplayContainer}>
+          <View style={styles.valueRow}>
+            <TextInput
+              style={styles.valueTextMassive}
+              value={weightValue}
+              onChangeText={setWeightValue}
+              placeholder="70"
+              placeholderTextColor="rgba(255, 255, 255, 0.2)"
+              keyboardType="numeric"
+              autoFocus
+              maxLength={5}
+            />
+            
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => {
+                const next = data.weightUnit === 'kg' ? 'lb' : 'kg';
+                updateData({ weightUnit: next });
+              }}
+              style={styles.inlineUnitToggle}
+            >
+              <Text style={styles.inlineUnitText}>{data.weightUnit}</Text>
+              <Ionicons name="chevron-down" size={24} color={Vitality.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          <Button title="Back" onPress={handleBack} variant="outline" style={styles.halfBtn} />
-          <Button title="Continue" onPress={handleNext} disabled={!data.goal} style={styles.halfBtn} />
-        </View>
       </View>
-    </View>
+    </OnboardingScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
   content: {
     flex: 1,
+    justifyContent: 'center', // Center vertically on the screen
+    paddingBottom: 40,
   },
-  title: {
+  valueDisplayContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+  },
+  valueTextMassive: {
+    fontSize: 80, // Massive input text
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -2,
+    marginRight: 8,
+    minWidth: 100, // Keep cursor stable
+    textAlign: 'center',
+  },
+  inlineUnitToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  inlineUnitText: {
     fontSize: 28,
     fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.textMuted,
-    marginBottom: 32,
-  },
-  options: {
-    gap: 16,
-  },
-  footer: {
-    paddingBottom: 24,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  halfBtn: {
-    flex: 1,
+    color: Vitality.primary,
+    marginRight: 4,
+    textTransform: 'lowercase',
   },
 });

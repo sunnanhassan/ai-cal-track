@@ -62,174 +62,53 @@ export async function generateFitnessPlan(userData: UserOnboardingData): Promise
   `;
 
   try {
-    const isLocal = process.env.NODE_ENV === 'development';
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 
-        (Platform.OS === 'android' ? 'http://10.0.2.2:8081' : 'http://localhost:8081');
-    
-    const response = await fetch(`${baseUrl}/api/gemini`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing EXPO_PUBLIC_GEMINI_API_KEY in environment");
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      }),
     });
 
     if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Google API returned ${response.status}: ${errorText}`);
     }
 
     const json = await response.json();
-    const jsonString = json.text;
+    const jsonString = json.candidates?.[0]?.content?.parts?.[0]?.text;
     
-    if (!jsonString) {
-      if (isLocal) console.error('Gemini returned an empty structure (redacted body)');
-      throw new Error('Invalid response format from Gemini API endpoint');
-    }
+    if (!jsonString) throw new Error('Empty response from AI');
 
     const cleanJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
-
-    // Redacted server logging in Production
-    if (isLocal) {
-        console.log(`[DEBUG] Gemini Response Length: ${cleanJsonString.length} bytes`);
-    }
-
     const parsedData = JSON.parse(cleanJsonString);
     
     if (!validateFitnessPlan(parsedData)) {
-      if (isLocal) console.error('[DEBUG] Validation failed for structure keys');
       throw new Error('Received malformed fitness plan schema from AI');
     }
     
     return parsedData;
 
   } catch (error: any) {
-    console.error('Error executing fitness generation handler: ', error.message);
+    console.error('Error executing fitness generation: ', error.message);
     throw error;
   }
 }
 
-export interface FoodNutritionData {
-  foodName: string;
-  servingSize: string;
-  calories: string;
-  protein: string;
-  fat: string;
-  carbs: string;
-}
 
-export async function analyzeFoodImage(base64Image: string): Promise<FoodNutritionData> {
-  const prompt = `
-    You are an expert AI food analyst. Analyze the provided image of food.
-    Identify the dish or food item, and estimate its nutritional values for a standard serving size visible or typically associated with it.
-    
-    Respond strictly with a JSON object in the exact following format, with no markdown formatting or extra text:
-    {
-      "foodName": "Name of the dish/food",
-      "servingSize": "e.g., 1 bowl (300g)",
-      "calories": "450",
-      "protein": "25.0",
-      "fat": "15.5",
-      "carbs": "40.2"
-    }
-
-    If the image does not contain food, or you cannot identify it, provide your best reasonable guess of any visible organic matter or return 0s for macros and unknown for foodName.
-  `;
-
-  try {
-    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing EXPO_PUBLIC_GEMINI_API_KEY in environment");
-    }
-
-    const modelsToTry = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-1.5-flash'
-    ];
-
-    let response;
-    let success = false;
-    let lastErrorText = '';
-
-    for (const model of modelsToTry) {
-      if (success) break;
-      
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      
-      // Try each model up to 2 times if it hits a 503 (High Traffic)
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                contents: [{
-                  parts: [
-                    { text: prompt },
-                    { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
-                  ]
-                }],
-                generationConfig: {
-                  temperature: 0.2,
-                  responseMimeType: 'application/json'
-                }
-              }),
-          });
-          
-          if (response.ok) {
-             success = true;
-             break; // Break retry loop
-          } else {
-             lastErrorText = await response.text();
-             console.log(`Model ${model} (Attempt ${attempt}) failed: ${response.status} - ${lastErrorText.substring(0, 100)}...`);
-             
-             if (response.status === 503) {
-               // Temporary traffic spike. Wait 2 seconds and retry this exact model!
-               await new Promise(res => setTimeout(res, 2000));
-               continue; 
-             } else if (response.status === 429) {
-               // Quota fully exhausted (Limit=0), no point in retrying this model.
-               break; 
-             } else {
-               // Other error (400, 404), go to next model
-               break;
-             }
-          }
-        } catch (err: any) {
-           console.warn(`Fetch natively failed for ${model}:`, err.message);
-           break;
-        }
-      }
-    }
-
-    if (!success || !response) {
-      console.error('All Google AI Models Exhausted.');
-      throw new Error(`Google API returned 503 (High Traffic) or 429 (Quota). Please try again later.`);
-    }
-
-    const json = await response.json();
-    const jsonString = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!jsonString) {
-      throw new Error('Invalid response format from Gemini API endpoint');
-    }
-
-    const cleanJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsedData = JSON.parse(cleanJsonString);
-    
-    // Convert numbers to strings matching the SelectedFoodParsed interface
-    return {
-      foodName: parsedData.foodName || 'Unknown Food',
-      servingSize: parsedData.servingSize || '1 serving',
-      calories: parsedData.calories?.toString() || '0',
-      protein: parsedData.protein?.toString() || '0',
-      fat: parsedData.fat?.toString() || '0',
-      carbs: parsedData.carbs?.toString() || '0'
-    };
-
-  } catch (error: any) {
-    console.error('Error executing image analysis: ', error.message);
-    throw error;
-  }
-}
 
 export interface BentoInsight {
   title: string;
@@ -276,21 +155,33 @@ export async function generateBentoInsights(weeklyData: any[], weight: string): 
   `;
 
   try {
-    const isLocal = process.env.NODE_ENV === 'development';
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 
-        (Platform.OS === 'android' ? 'http://10.0.2.2:8081' : 'http://localhost:8081');
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing EXPO_PUBLIC_GEMINI_API_KEY in environment");
+    }
 
-    const response = await fetch(`${baseUrl}/api/gemini`, {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ 
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      }),
     });
 
     if (!response.ok) throw new Error(`Server returned ${response.status}`);
 
     const json = await response.json();
-    const jsonString = json.text;
-    if (!jsonString) throw new Error('Empty response from proxy');
+    const jsonString = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!jsonString) throw new Error('Empty response from AI');
 
     const cleanJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJsonString);
@@ -299,6 +190,234 @@ export async function generateBentoInsights(weeklyData: any[], weight: string): 
     console.error('Error generating bento insights: ', error.message);
     // Return empty array on error to prevent UI crash
     return [];
+  }
+}
+
+export interface FoodNutritionData {
+  foodName: string;
+  servingSize: string;
+  calories: string;
+  protein: string;
+  fat: string;
+  carbs: string;
+  fiber?: string;
+  sugar?: string;
+  addedSugar?: string;
+  sugarAlcohols?: string;
+  sodium?: string;
+  cholesterol?: string;
+  saturatedFat?: string;
+  transFat?: string;
+  polyunsaturatedFat?: string;
+  monounsaturatedFat?: string;
+  potassium?: string;
+  calcium?: string;
+  iron?: string;
+  vitaminA?: string;
+  vitaminC?: string;
+  vitaminD?: string;
+  healthAnalysis?: string;
+}
+
+export async function analyzeFoodImage(base64Image: string): Promise<FoodNutritionData> {
+  const prompt = `
+    You are an expert AI food analyst. Analyze the provided image of food.
+    Identify the dish or food item, and estimate its nutritional values for a standard serving size visible or typically associated with it.
+    
+    Respond strictly with a JSON object in the exact following format, with no markdown formatting or extra text:
+    {
+      "foodName": "Name of the dish/food",
+      "servingSize": "e.g., 1 bowl (300g)",
+      "calories": "450",
+      "protein": "25.0",
+      "fat": "15.5",
+      "carbs": "40.2",
+      "fiber": "5.0",
+      "sugar": "8.0",
+      "addedSugar": "2.0",
+      "sugarAlcohols": "0.5",
+      "sodium": "450",
+      "cholesterol": "40",
+      "saturatedFat": "4.2",
+      "transFat": "0.1",
+      "polyunsaturatedFat": "1.2",
+      "monounsaturatedFat": "2.5",
+      "potassium": "300",
+      "calcium": "150",
+      "iron": "2.5",
+      "vitaminA": "400",
+      "vitaminC": "12",
+      "vitaminD": "0",
+      "healthAnalysis": "A 2-3 sentence analysis of this meal's nutritional impact, specific to the ingredients and portions visible."
+    }
+
+    If the image does not contain food, or you cannot identify it, provide your best reasonable guess of any visible organic matter or return 0s for macros and unknown for foodName.
+  `;
+
+  try {
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing EXPO_PUBLIC_GEMINI_API_KEY in environment");
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google API returned ${response.status}: ${errorText}`);
+    }
+
+    const json = await response.json();
+    const jsonString = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!jsonString) throw new Error('Empty response from AI');
+
+    const cleanJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJsonString);
+
+  } catch (error: any) {
+    console.error('Error analyzing food image: ', error.message);
+    throw error;
+  }
+}
+
+export interface QuickLogResult {
+  name: string;
+  type: 'food' | 'exercise';
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  fiber?: number;
+  sugar?: number;
+  addedSugar?: number;
+  sugarAlcohols?: number;
+  sodium?: number;
+  cholesterol?: number;
+  potassium?: number;
+  calcium?: number;
+  iron?: number;
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  saturatedFat?: number;
+  transFat?: number;
+  polyunsaturatedFat?: number;
+  monounsaturatedFat?: number;
+  healthAnalysis?: string;
+  burnedCalories?: number;
+  duration?: number;
+}
+
+export async function parseQuickLog(query: string): Promise<QuickLogResult> {
+  const prompt = `
+    You are an expert AI nutrition and fitness tracker. Analyze the following natural language query and return a structured JSON object.
+    
+    Query: "${query}"
+    
+    GUIDELINES:
+    1. HIGH SPECIFICITY: If the user provides a weight or quantity (e.g. "half kg", "1 plate", "2 fillets"), you MUST calculate all nutritional values specifically for that exact amount.
+    2. Determine if it is a food intake ("one apple", "chicken bowl") or an exercise ("running 30 mins", "pushups").
+    3. For Food:
+       - type: "food"
+       - calories: Estimated kcal for the specific quantity
+       - protein/fat/carbs/fiber/sugar/addedSugar/sugarAlcohols: Estimated grams (number) for the specific quantity
+       - saturatedFat/transFat/polyunsaturatedFat/monounsaturatedFat: Estimated grams (number)
+       - sodium/cholesterol/potassium/calcium/iron/vitaminC: Estimated mg (number)
+       - vitaminA/vitaminD: Estimated IU (number)
+       - healthAnalysis: A 2-3 sentence personal coach analysis of this specific meal choice, mentioning why it's good or what to watch out for based on the description and quantity provided. Keep it supportive and evidence-based.
+    4. For Exercise:
+       - type: "exercise"
+       - calories/macros/micros: 0 (keep these 0 for food sum)
+       - burnedCalories: Estimated kcal burned
+       - duration: Estimated minutes (if mentioned, else 0)
+       - healthAnalysis: A short, motivating sentence about this specific activity.
+    
+    Respond strictly with a JSON object in this format:
+    {
+      "name": "Clean short name",
+      "type": "food" | "exercise",
+      "calories": number,
+      "protein": number,
+      "fat": number,
+      "carbs": number,
+      "fiber": number,
+      "sugar": number,
+      "addedSugar": number,
+      "sugarAlcohols": number,
+      "sodium": number,
+      "cholesterol": number,
+      "potassium": number,
+      "calcium": number,
+      "iron": number,
+      "vitaminA": number,
+      "vitaminC": number,
+      "vitaminD": number,
+      "saturatedFat": number,
+      "transFat": number,
+      "polyunsaturatedFat": number,
+      "monounsaturatedFat": number,
+      "healthAnalysis": string,
+      "burnedCalories": number,
+      "duration": number
+    }
+  `;
+
+  try {
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing EXPO_PUBLIC_GEMINI_API_KEY in environment");
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google API returned ${response.status}: ${errorText}`);
+    }
+
+    const json = await response.json();
+    const jsonString = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!jsonString) throw new Error('Empty response from AI');
+
+    const cleanJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJsonString);
+
+  } catch (error: any) {
+    console.error('Error parsing quick log: ', error.message);
+    throw error;
   }
 }
 

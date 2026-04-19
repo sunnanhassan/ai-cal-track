@@ -12,6 +12,7 @@ import {
   seedAdminConfig,
   logNotificationToHistory 
 } from "../lib/notificationService";
+import { configureRevenueCat, identifyUser, logoutUser } from "../lib/revenuecat";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -59,6 +60,18 @@ function InitialLayout() {
       if (responseListener.current) responseListener.current.remove();
     };
   }, [user]);
+
+  useEffect(() => {
+    configureRevenueCat();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      identifyUser(user.id);
+    } else if (!isSignedIn && isLoaded) {
+      logoutUser();
+    }
+  }, [user, isSignedIn, isLoaded]);
 
   useEffect(() => {
     if (isSignedIn && user && isOnboardingComplete === true) {
@@ -125,11 +138,16 @@ function InitialLayout() {
 
     const isActuallyGenerating = segments.includes('generating');
 
+    console.log('Layout Navigation Check:', { isSignedIn, isLoaded, isOnboardingComplete, segments });
+
     if (isSignedIn && isOnboardingComplete === false && !inOnboardingGroup) {
+      console.log('Redirecting to Onboarding');
       router.replace('/(onboarding)/step-1' as any);
     } else if (isSignedIn && isOnboardingComplete === true && (isIndex || inAuthGroup || (inOnboardingGroup && !isActuallyGenerating))) {
+      console.log('Redirecting to Tabs');
       router.replace('/(tabs)' as any);
     } else if (!isSignedIn && (!inAuthGroup || isIndex)) {
+      console.log('Redirecting to Sign In');
       router.replace('/(auth)/sign-in' as any);
     }
 
